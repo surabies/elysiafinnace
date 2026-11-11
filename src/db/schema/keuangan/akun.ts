@@ -15,6 +15,7 @@ import {
 import { kolomAktif, kolomAudit, kolomId, kolomWaktu } from "./_helper";
 import { currencies } from "./mata-uang";
 import {
+  KATEGORI_ARUS_KAS,
   PERAN_SISTEM,
   PERAN_SISTEM_BANYAK_AKUN,
   PERAN_SISTEM_KE_TIPE,
@@ -25,6 +26,7 @@ import {
 export const tipeAkunEnum = pgEnum("tipe_akun", TIPE_AKUN);
 export const saldoNormalEnum = pgEnum("saldo_normal", SALDO_NORMAL);
 export const peranSistemEnum = pgEnum("peran_sistem_akun", PERAN_SISTEM);
+export const kategoriArusKasEnum = pgEnum("kategori_arus_kas", KATEGORI_ARUS_KAS);
 
 // Potongan SQL statis (dibangun dari konstanta, bukan input pengguna).
 const kondisiPeranSesuaiTipe = Object.entries(PERAN_SISTEM_KE_TIPE)
@@ -57,6 +59,8 @@ export const chartOfAccounts = pgTable(
     bisaDiposting: boolean("bisa_diposting").notNull().default(true),
     adalahAkunKontra: boolean("adalah_akun_kontra").notNull().default(false),
     peranSistem: peranSistemEnum("peran_sistem"),
+    /** Klasifikasi Laporan Arus Kas untuk mutasi lawan kas (default OPERASI; EKUITAS dianggap PENDANAAN). */
+    kategoriArusKas: kategoriArusKasEnum("kategori_arus_kas"),
     mataUangId: uuid("mata_uang_id").references(() => currencies.id, { onDelete: "restrict" }),
     keterangan: text("keterangan"),
     aktif: kolomAktif(),

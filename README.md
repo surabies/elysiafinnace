@@ -14,15 +14,15 @@ It is prepared for Vercel.
 
 ## Tech stack
 
-| Layer | Technology (installed version) |
-| --- | --- |
+| Layer     | Technology (installed version)                                                   |
+| --------- | -------------------------------------------------------------------------------- |
 | Framework | Next.js 16.4.5 (App Router, Cache Components), React 19.3, TypeScript 5.9 strict |
-| API | ElysiaJS 1.4.31 mounted as a catch-all Route Handler, Eden Treaty 1.4.9 |
-| UI | shadcn/ui (new-york-v4 sources) on Tailwind CSS 4.3, Radix UI, lucide-react |
-| Database | PostgreSQL + PostGIS, Drizzle ORM 0.45.4, drizzle-kit 0.31.11, `pg` 8.23 |
-| Auth | Better Auth 1.7.18 (Drizzle adapter) |
-| Tooling | Bun 1.4.4 (scripts, tests), Node.js 22 (what Next.js runs on), Playwright 1.65 |
-| Hosting | Vercel (Node.js runtime, see `docs/DECISIONS.md` D-003) |
+| API       | ElysiaJS 1.4.31 mounted as a catch-all Route Handler, Eden Treaty 1.4.9          |
+| UI        | shadcn/ui (new-york-v4 sources) on Tailwind CSS 4.3, Radix UI, lucide-react      |
+| Database  | PostgreSQL + PostGIS, Drizzle ORM 0.45.4, drizzle-kit 0.31.11, `pg` 8.23         |
+| Auth      | Better Auth 1.7.18 (Drizzle adapter)                                             |
+| Tooling   | Bun 1.4.4 (scripts, tests), Node.js 22 (what Next.js runs on), Playwright 1.65   |
+| Hosting   | Vercel (Node.js runtime, see `docs/DECISIONS.md` D-003)                          |
 
 ## Project structure
 
@@ -88,28 +88,28 @@ credentials only, so the matching URL is `postgres://app:app_dev_pw@localhost:54
 
 ### Commands
 
-| Command | What it does |
-| --- | --- |
-| `bun run dev` / `build` / `start` | Next.js development, production build, production server |
-| `bun run typecheck` | `tsc --noEmit` |
-| `bun run lint` | ESLint |
-| `bun run test` | Unit + integration tests (needs PostgreSQL with PostGIS on localhost:5432) |
-| `bun run test:e2e` | Playwright against `next start` (run `bun run build` first; creates users in your dev database) |
-| `bun run db:generate` / `db:migrate` / `db:studio` | drizzle-kit |
-| `bun run auth:generate` | Regenerate `src/db/schema/auth.ts` with the Better Auth CLI |
+| Command                                            | What it does                                                                                    |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `bun run dev` / `build` / `start`                  | Next.js development, production build, production server                                        |
+| `bun run typecheck`                                | `tsc --noEmit`                                                                                  |
+| `bun run lint`                                     | ESLint                                                                                          |
+| `bun run test`                                     | Unit + integration tests (needs PostgreSQL with PostGIS on localhost:5432)                      |
+| `bun run test:e2e`                                 | Playwright against `next start` (run `bun run build` first; creates users in your dev database) |
+| `bun run db:generate` / `db:migrate` / `db:studio` | drizzle-kit                                                                                     |
+| `bun run auth:generate`                            | Regenerate `src/db/schema/auth.ts` with the Better Auth CLI                                     |
 
 ## Environment variables
 
-| Name | Required | Purpose | Example placeholder |
-| --- | --- | --- | --- |
-| `DATABASE_URL` | yes | PostgreSQL with PostGIS. Use the provider's **pooled** URL on Vercel; add `?sslmode=require` if the provider needs TLS | `postgres://USER:PASSWORD@HOST:5432/DATABASE` |
-| `BETTER_AUTH_SECRET` | yes | Signs sessions. 32+ random characters | output of `openssl rand -base64 32` |
-| `BETTER_AUTH_URL` | yes in production | Public origin of the app. Leave **unset for Vercel Preview** (derived from `VERCEL_BRANCH_URL` / `VERCEL_URL`) | `https://app.example.com` |
-| `ALLOWED_ORIGINS` | no | Comma-separated explicit origins allowed to call the API cross-origin and trusted by Better Auth. Empty = same-origin only. No wildcards | `https://admin.example.com` |
-| `WRITE_RATE_LIMIT_MAX` | no | Mutating requests per minute per IP on the Elysia API (default 30) | `30` |
-| `DATABASE_POOL_MAX` | no | Pool size per runtime instance (default 5, max 50) | `5` |
-| `TEST_DATABASE_ADMIN_URL` | tests only | Connection that may `CREATE DATABASE`; tests create and drop `app_test` | `postgres://app:app_dev_pw@localhost:5432/postgres` |
-| `PLAYWRIGHT_CHROMIUM_PATH` / `E2E_BASE_URL` | e2e only | Use a specific Chromium binary / another base URL | |
+| Name                                        | Required          | Purpose                                                                                                                                  | Example placeholder                                 |
+| ------------------------------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| `DATABASE_URL`                              | yes               | PostgreSQL with PostGIS. Use the provider's **pooled** URL on Vercel; add `?sslmode=require` if the provider needs TLS                   | `postgres://USER:PASSWORD@HOST:5432/DATABASE`       |
+| `BETTER_AUTH_SECRET`                        | yes               | Signs sessions. 32+ random characters                                                                                                    | output of `openssl rand -base64 32`                 |
+| `BETTER_AUTH_URL`                           | yes in production | Public origin of the app. Leave **unset for Vercel Preview** (derived from `VERCEL_BRANCH_URL` / `VERCEL_URL`)                           | `https://app.example.com`                           |
+| `ALLOWED_ORIGINS`                           | no                | Comma-separated explicit origins allowed to call the API cross-origin and trusted by Better Auth. Empty = same-origin only. No wildcards | `https://admin.example.com`                         |
+| `WRITE_RATE_LIMIT_MAX`                      | no                | Mutating requests per minute per IP on the Elysia API (default 30)                                                                       | `30`                                                |
+| `DATABASE_POOL_MAX`                         | no                | Pool size per runtime instance (default 5, max 50)                                                                                       | `5`                                                 |
+| `TEST_DATABASE_ADMIN_URL`                   | tests only        | Connection that may `CREATE DATABASE`; tests create and drop `app_test`                                                                  | `postgres://app:app_dev_pw@localhost:5432/postgres` |
+| `PLAYWRIGHT_CHROMIUM_PATH` / `E2E_BASE_URL` | e2e only          | Use a specific Chromium binary / another base URL                                                                                        |                                                     |
 
 Provided by Vercel at runtime (do not set): `VERCEL`, `VERCEL_ENV`, `VERCEL_URL`, `VERCEL_BRANCH_URL`.
 The environment is validated at server start (`src/instrumentation.ts`); a bad value fails with the variable name
@@ -120,31 +120,43 @@ and never prints its value. The app has no `NEXT_PUBLIC_` variables; nothing sec
 Base path `/api`. Every response is JSON. Success bodies have `"success": true`; failures use one shape:
 
 ```json
-{ "success": false, "error": { "code": "VALIDATION_ERROR", "message": "Request validation failed",
-  "details": [{ "path": "/lon", "message": "..." }] } }
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Request validation failed",
+    "details": [{ "path": "/lon", "message": "..." }]
+  }
+}
 ```
 
 Error codes: `BAD_REQUEST` 400, `UNAUTHORIZED` 401, `FORBIDDEN` 403, `NOT_FOUND` 404, `CONFLICT` 409,
 `VALIDATION_ERROR` 422, `RATE_LIMITED` 429 (with `Retry-After`), `INTERNAL_ERROR` 500 (generic message, details only in server logs).
 
-| Method and path | Auth | Description |
-| --- | --- | --- |
-| `GET /api` | no | `{ "success": true, "name": "Elysia Backend API", "version": "1.0.0" }` |
-| `GET /api/health` | no | `{ "success": true, "status": "healthy" }` |
-| `POST /api/echo` | no | Body `{ "message": string }` (1 to 500 chars, not blank). Returns `{ "success": true, "data": { "message": "..." } }` |
-| `GET /api/me` | yes | The signed-in user: `id`, `name`, `email`, `emailVerified`, `image`, `createdAt`. 401 otherwise |
-| `POST /api/places` | yes | Body `{ "name": string (1 to 120), "longitude": -180..180, "latitude": -90..90 }`. 201 with the place. 409 if you already have a place with that name |
-| `GET /api/places` | no | `?limit=1..100 (default 20)&offset=0..`. `{ "data": [place], "pagination": { "limit", "offset", "total" } }`, newest first |
-| `GET /api/places/:id` | no | One place (`:id` must be a UUID; 404 if missing) |
-| `DELETE /api/places/:id` | yes, owner | 200 `{ "success": true, "data": { "id" } }`. 403 for another user's place, 404 if missing |
-| `GET /api/places/nearby` | no | `?lon=&lat=&radius=&limit=`. `radius` in metres, 1 to 50,000 (default 1000); `limit` 1 to 100 (default 20). Nearest first, each item has `distanceMeters` |
-| `/api/auth/*` | n/a | Better Auth: `POST /sign-up/email`, `POST /sign-in/email`, `POST /sign-out`, `GET /get-session`, ... |
+| Method and path          | Auth       | Description                                                                                                                                               |
+| ------------------------ | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api`               | no         | `{ "success": true, "name": "Elysia Backend API", "version": "1.0.0" }`                                                                                   |
+| `GET /api/health`        | no         | `{ "success": true, "status": "healthy" }`                                                                                                                |
+| `POST /api/echo`         | no         | Body `{ "message": string }` (1 to 500 chars, not blank). Returns `{ "success": true, "data": { "message": "..." } }`                                     |
+| `GET /api/me`            | yes        | The signed-in user: `id`, `name`, `email`, `emailVerified`, `image`, `createdAt`. 401 otherwise                                                           |
+| `POST /api/places`       | yes        | Body `{ "name": string (1 to 120), "longitude": -180..180, "latitude": -90..90 }`. 201 with the place. 409 if you already have a place with that name     |
+| `GET /api/places`        | no         | `?limit=1..100 (default 20)&offset=0..`. `{ "data": [place], "pagination": { "limit", "offset", "total" } }`, newest first                                |
+| `GET /api/places/:id`    | no         | One place (`:id` must be a UUID; 404 if missing)                                                                                                          |
+| `DELETE /api/places/:id` | yes, owner | 200 `{ "success": true, "data": { "id" } }`. 403 for another user's place, 404 if missing                                                                 |
+| `GET /api/places/nearby` | no         | `?lon=&lat=&radius=&limit=`. `radius` in metres, 1 to 50,000 (default 1000); `limit` 1 to 100 (default 20). Nearest first, each item has `distanceMeters` |
+| `/api/auth/*`            | n/a        | Better Auth: `POST /sign-up/email`, `POST /sign-in/email`, `POST /sign-out`, `GET /get-session`, ...                                                      |
 
 A place looks like:
 
 ```json
-{ "id": "6f1c...-uuid", "name": "Corner Cafe", "longitude": 2.2945, "latitude": 48.8584,
-  "ownerId": "user-id", "createdAt": "2026-11-06T10:00:00.000Z" }
+{
+  "id": "6f1c...-uuid",
+  "name": "Corner Cafe",
+  "longitude": 2.2945,
+  "latitude": 48.8584,
+  "ownerId": "user-id",
+  "createdAt": "2026-11-06T10:00:00.000Z"
+}
 ```
 
 Examples:
@@ -265,17 +277,17 @@ Next.js (beta); it is intentionally not enabled, see `docs/DECISIONS.md` D-003.
 
 ## Troubleshooting
 
-| Symptom | Cause and fix |
-| --- | --- |
+| Symptom                                                                          | Cause and fix                                                                                                                                                                              |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `extension "postgis" is not available` / `permission denied to create extension` | The server lacks PostGIS or the migration role cannot create extensions. Use a PostGIS image or provider, or have an admin run `CREATE EXTENSION postgis` once, then re-run the migration. |
-| `Invalid environment variables:` at startup | A variable is missing or malformed; the message lists names. Fix `.env` / Vercel settings. |
-| `Invalid origin` (403) from `/api/auth/*` | The request origin is not trusted. Match `BETTER_AUTH_URL`, add the origin to `ALLOWED_ORIGINS`, or send `Origin` from non-browser clients. |
-| Sign-in works locally but cookies are lost on a preview URL | `BETTER_AUTH_URL` is set to another host in Preview. Unset it there. |
-| `too many clients already` / timeouts under load | Pool size times instances exceeds the database limit. Lower `DATABASE_POOL_MAX`, use the pooled connection string. |
-| Validation does not reject out-of-range query values after an upgrade | Run `bun run test:e2e`; see D-007 (`serverExternalPackages: ["elysia"]`). |
-| A new endpoint returns 204 and fails with 500 in production only | See D-008; return 200 with JSON, or test it with `bun run test:e2e`. |
-| A warning about an invalid source map for Elysia in the server log | Harmless noise from the package's source map. |
-| `bun test` finds no PostgreSQL | Start `docker compose up -d db`, or set `TEST_DATABASE_ADMIN_URL`. |
+| `Invalid environment variables:` at startup                                      | A variable is missing or malformed; the message lists names. Fix `.env` / Vercel settings.                                                                                                 |
+| `Invalid origin` (403) from `/api/auth/*`                                        | The request origin is not trusted. Match `BETTER_AUTH_URL`, add the origin to `ALLOWED_ORIGINS`, or send `Origin` from non-browser clients.                                                |
+| Sign-in works locally but cookies are lost on a preview URL                      | `BETTER_AUTH_URL` is set to another host in Preview. Unset it there.                                                                                                                       |
+| `too many clients already` / timeouts under load                                 | Pool size times instances exceeds the database limit. Lower `DATABASE_POOL_MAX`, use the pooled connection string.                                                                         |
+| Validation does not reject out-of-range query values after an upgrade            | Run `bun run test:e2e`; see D-007 (`serverExternalPackages: ["elysia"]`).                                                                                                                  |
+| A new endpoint returns 204 and fails with 500 in production only                 | See D-008; return 200 with JSON, or test it with `bun run test:e2e`.                                                                                                                       |
+| A warning about an invalid source map for Elysia in the server log               | Harmless noise from the package's source map.                                                                                                                                              |
+| `bun test` finds no PostgreSQL                                                   | Start `docker compose up -d db`, or set `TEST_DATABASE_ADMIN_URL`.                                                                                                                         |
 
 ## Recommendations (not implemented, by design)
 
@@ -291,7 +303,3 @@ Next.js (beta); it is intentionally not enabled, see `docs/DECISIONS.md` D-003.
 
 - [`docs/FEATURES.md`](docs/FEATURES.md): every feature and requirement, status and evidence.
 - [`docs/DECISIONS.md`](docs/DECISIONS.md): why things are the way they are, including defects found in production mode.
-#   e l y s i a f i n n a c e 
-
- 
- 

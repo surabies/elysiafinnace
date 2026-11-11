@@ -6,6 +6,7 @@ import { echoModule } from "./modules/echo";
 import { healthModule } from "./modules/health";
 import { meModule } from "./modules/me";
 import { placesModule } from "./modules/places";
+import { modulKeuangan } from "./keuangan";
 
 export const API_VERSION = "1.0.0";
 
@@ -26,7 +27,8 @@ export const app = new Elysia({ prefix: "/api" })
   .use(healthModule)
   .use(echoModule)
   .use(meModule)
-  .use(placesModule);
+  .use(placesModule)
+  .use(modulKeuangan);
 
 /** Export for Eden Treaty (end-to-end types). Import with `import type`. */
 export type App = typeof app;

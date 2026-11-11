@@ -5,3 +5,8 @@ export * from "./akun";
 export * from "./kontak";
 export * from "./inventori";
 export * from "./bank";
+export * from "./rbac";
+export * from "./periode";
+export * from "./jurnal";
+export * from "./transaksi";
+export * from "./dagang";

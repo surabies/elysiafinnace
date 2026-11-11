@@ -1,5 +1,5 @@
 import { Elysia, t } from "elysia";
-import { bacaHalaman, dasarKeuangan, ok, skema } from "../_umum";
+import { bacaHalaman, dasarKeuangan, izinPerMetode, ok, skema } from "../_umum";
 import {
   skemaBuatKontak,
   skemaBuatTermin,
@@ -14,6 +14,7 @@ const parameterId = t.Object({ id: skema.uuid("id") });
 
 export const rutaTermin = new Elysia({ prefix: "/termin-pembayaran", name: "keuangan.termin-pembayaran" })
   .use(dasarKeuangan)
+  .onBeforeHandle(izinPerMetode("master_data"))
   .get("/", async ({ query }) => ok(await layanan.daftarTermin({ aktif: query.aktif })), { query: skemaQueryTermin })
   .get("/:id", async ({ params }) => ok(await layanan.ambilTermin(params.id)), { params: parameterId })
   .post(
@@ -32,6 +33,7 @@ export const rutaTermin = new Elysia({ prefix: "/termin-pembayaran", name: "keua
 
 export const rutaKontak = new Elysia({ prefix: "/kontak", name: "keuangan.kontak" })
   .use(dasarKeuangan)
+  .onBeforeHandle(izinPerMetode("master_data"))
   .get(
     "/",
     async ({ query }) => {

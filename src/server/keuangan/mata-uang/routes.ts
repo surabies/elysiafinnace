@@ -1,5 +1,5 @@
 import { Elysia, t } from "elysia";
-import { bacaHalaman, dasarKeuangan, ok, skema } from "../_umum";
+import { bacaHalaman, dasarKeuangan, izinPerMetode, ok, skema } from "../_umum";
 import {
   skemaBuatMataUang,
   skemaQueryKurs,
@@ -14,6 +14,7 @@ const parameterId = t.Object({ id: skema.uuid("id") });
 
 export const rutaMataUang = new Elysia({ prefix: "/mata-uang", name: "keuangan.mata-uang" })
   .use(dasarKeuangan)
+  .onBeforeHandle(izinPerMetode("master_data"))
   .get("/", async ({ query }) => ok(await layanan.daftarMataUang({ aktif: query.aktif })), {
     query: skemaQueryMataUang,
   })
@@ -35,6 +36,7 @@ export const rutaMataUang = new Elysia({ prefix: "/mata-uang", name: "keuangan.m
 
 export const rutaKurs = new Elysia({ prefix: "/kurs", name: "keuangan.kurs" })
   .use(dasarKeuangan)
+  .onBeforeHandle(izinPerMetode("master_data"))
   .get(
     "/",
     async ({ query }) => {

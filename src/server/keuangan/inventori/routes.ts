@@ -1,5 +1,5 @@
 import { Elysia, t } from "elysia";
-import { bacaHalaman, dasarKeuangan, ok, skema } from "../_umum";
+import { bacaHalaman, dasarKeuangan, izinPerMetode, ok, skema } from "../_umum";
 import {
   skemaBuatItem,
   skemaBuatKategori,
@@ -16,6 +16,7 @@ const parameterId = t.Object({ id: skema.uuid("id") });
 
 export const rutaKategoriProduk = new Elysia({ prefix: "/kategori-produk", name: "keuangan.kategori-produk" })
   .use(dasarKeuangan)
+  .onBeforeHandle(izinPerMetode("master_data"))
   .get("/", async ({ query }) => ok(await layanan.daftarKategori({ aktif: query.aktif })), { query: skemaQueryAktif })
   .get("/:id", async ({ params }) => ok(await layanan.ambilKategori(params.id)), { params: parameterId })
   .post(
@@ -34,6 +35,7 @@ export const rutaKategoriProduk = new Elysia({ prefix: "/kategori-produk", name:
 
 export const rutaSatuan = new Elysia({ prefix: "/satuan", name: "keuangan.satuan" })
   .use(dasarKeuangan)
+  .onBeforeHandle(izinPerMetode("master_data"))
   .get("/", async ({ query }) => ok(await layanan.daftarSatuan({ aktif: query.aktif })), { query: skemaQueryAktif })
   .get("/:id", async ({ params }) => ok(await layanan.ambilSatuan(params.id)), { params: parameterId })
   .post(
@@ -52,6 +54,7 @@ export const rutaSatuan = new Elysia({ prefix: "/satuan", name: "keuangan.satuan
 
 export const rutaItem = new Elysia({ prefix: "/item", name: "keuangan.item" })
   .use(dasarKeuangan)
+  .onBeforeHandle(izinPerMetode("master_data"))
   .get(
     "/",
     async ({ query }) => {

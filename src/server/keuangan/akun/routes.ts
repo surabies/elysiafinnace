@@ -1,5 +1,5 @@
 import { Elysia, t } from "elysia";
-import { dasarKeuangan, ok, skema } from "../_umum";
+import { dasarKeuangan, izinPerMetode, ok, skema } from "../_umum";
 import { skemaBuatAkun, skemaQueryAkun, skemaQueryPohonAkun, skemaUbahAkun } from "./skema";
 import * as layanan from "./service";
 
@@ -7,6 +7,7 @@ const parameterId = t.Object({ id: skema.uuid("id") });
 
 export const rutaAkun = new Elysia({ prefix: "/akun", name: "keuangan.akun" })
   .use(dasarKeuangan)
+  .onBeforeHandle(izinPerMetode("master_data"))
   .get("/", async ({ query }) => ok(await layanan.daftarAkun(query)), { query: skemaQueryAkun })
   .get("/pohon", async ({ query }) => ok(await layanan.pohonAkun({ aktif: query.aktif })), {
     query: skemaQueryPohonAkun,
