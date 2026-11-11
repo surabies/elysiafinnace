@@ -1,12 +1,16 @@
 import { eq } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import {
+  DAFTAR_IZIN,
   SALDO_NORMAL_BAWAAN,
   chartOfAccounts,
   currencies,
   paymentTerms,
   productCategories,
+  rolePermissions,
+  roles,
   unitsOfMeasurement,
+  type KategoriArusKas,
   type PeranSistem,
   type SaldoNormal,
   type TipeAkun,
@@ -59,6 +63,7 @@ type DefinisiAkun = {
   header?: boolean;
   kontra?: boolean;
   peran?: PeranSistem;
+  arusKas?: KategoriArusKas;
 };
 
 /** Bagan akun standar perusahaan dagang/jasa Indonesia. Urutan: induk selalu sebelum anak. */
@@ -73,8 +78,8 @@ const DAFTAR_AKUN: DefinisiAkun[] = [
   { kode: "1130", nama: "Persediaan Barang Dagang", tipe: "ASET", induk: "1100", peran: "PERSEDIAAN" },
   { kode: "1140", nama: "PPN Masukan", tipe: "ASET", induk: "1100", peran: "PPN_MASUKAN" },
   { kode: "1200", nama: "Aset Tetap", tipe: "ASET", induk: "1000", header: true },
-  { kode: "1210", nama: "Peralatan", tipe: "ASET", induk: "1200" },
-  { kode: "1219", nama: "Akumulasi Penyusutan Peralatan", tipe: "ASET", induk: "1200", kontra: true },
+  { kode: "1210", nama: "Peralatan", tipe: "ASET", induk: "1200", arusKas: "INVESTASI" },
+  { kode: "1219", nama: "Akumulasi Penyusutan Peralatan", tipe: "ASET", induk: "1200", kontra: true, arusKas: "INVESTASI" },
   // KEWAJIBAN
   { kode: "2000", nama: "KEWAJIBAN", tipe: "KEWAJIBAN", header: true },
   { kode: "2100", nama: "Kewajiban Jangka Pendek", tipe: "KEWAJIBAN", induk: "2000", header: true },
@@ -82,11 +87,11 @@ const DAFTAR_AKUN: DefinisiAkun[] = [
   { kode: "2120", nama: "PPN Keluaran", tipe: "KEWAJIBAN", induk: "2100", peran: "PPN_KELUARAN" },
   { kode: "2130", nama: "Hutang Gaji", tipe: "KEWAJIBAN", induk: "2100" },
   { kode: "2200", nama: "Kewajiban Jangka Panjang", tipe: "KEWAJIBAN", induk: "2000", header: true },
-  { kode: "2210", nama: "Hutang Bank Jangka Panjang", tipe: "KEWAJIBAN", induk: "2200" },
+  { kode: "2210", nama: "Hutang Bank Jangka Panjang", tipe: "KEWAJIBAN", induk: "2200", arusKas: "PENDANAAN" },
   // EKUITAS
   { kode: "3000", nama: "EKUITAS", tipe: "EKUITAS", header: true },
-  { kode: "3100", nama: "Modal Disetor", tipe: "EKUITAS", induk: "3000", peran: "MODAL_DISETOR" },
-  { kode: "3200", nama: "Laba Ditahan", tipe: "EKUITAS", induk: "3000", peran: "LABA_DITAHAN" },
+  { kode: "3100", nama: "Modal Disetor", tipe: "EKUITAS", induk: "3000", peran: "MODAL_DISETOR", arusKas: "PENDANAAN" },
+  { kode: "3200", nama: "Laba Ditahan", tipe: "EKUITAS", induk: "3000", peran: "LABA_DITAHAN", arusKas: "PENDANAAN" },
   // PENDAPATAN
   { kode: "4000", nama: "PENDAPATAN", tipe: "PENDAPATAN", header: true },
   { kode: "4100", nama: "Pendapatan Penjualan", tipe: "PENDAPATAN", induk: "4000", peran: "PENDAPATAN_PENJUALAN" },
@@ -150,6 +155,7 @@ export async function jalankanSeedKeuangan(db: Db) {
         bisaDiposting: !a.header,
         adalahAkunKontra: a.kontra ?? false,
         peranSistem: a.peran ?? null,
+        kategoriArusKas: a.arusKas ?? null,
       })
       .onConflictDoNothing({ target: chartOfAccounts.kode });
 
@@ -160,6 +166,52 @@ export async function jalankanSeedKeuangan(db: Db) {
     if (!baris) throw new Error(`[seed keuangan] Akun ${a.kode} gagal dibuat.`);
     petaId.set(a.kode, baris);
   }
+
+  await db
+    .insert(roles)
+    .values([
+      {
+        kode: "ADMIN",
+        nama: "Administrator",
+        keterangan: "Akses penuh modul keuangan.",
+        aksesPenuh: true,
+        adalahSistem: true,
+      },
+      {
+        kode: "AKUNTAN",
+        nama: "Akuntan",
+        keterangan: "Jurnal, laporan, dan siklus dagang. Tanpa kelola hak akses.",
+        aksesPenuh: false,
+        adalahSistem: true,
+      },
+      {
+        kode: "KASIR",
+        nama: "Kasir",
+        keterangan: "Kas, bank, dan biaya.",
+        aksesPenuh: false,
+        adalahSistem: true,
+      },
+    ])
+    .onConflictDoNothing();
+
+  const daftarPeran = await db.select({ id: roles.id, kode: roles.kode }).from(roles);
+  const idPeran = new Map(daftarPeran.map((p) => [p.kode, p.id]));
+  const izinAkuntan = DAFTAR_IZIN.filter((izin) => izin !== "rbac.kelola");
+  const izinKasir = [
+    "master_data.baca",
+    "kas_bank.baca",
+    "kas_bank.kelola",
+    "biaya.baca",
+    "biaya.kelola",
+    "biaya.posting",
+    "pembayaran.baca",
+    "pembayaran.kelola",
+  ] as const;
+  const barisIzin = [
+    ...izinAkuntan.map((izin) => ({ peranId: idPeran.get("AKUNTAN")!, izin })),
+    ...izinKasir.map((izin) => ({ peranId: idPeran.get("KASIR")!, izin })),
+  ].filter((b) => b.peranId);
+  if (barisIzin.length > 0) await db.insert(rolePermissions).values(barisIzin).onConflictDoNothing();
 
   console.log(
     `[seed keuangan] Selesai: ${DAFTAR_MATA_UANG.length} mata uang, ${DAFTAR_AKUN.length} akun COA, ` +

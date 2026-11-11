@@ -75,6 +75,9 @@ const PESAN_CONSTRAINT: Record<string, string> = {
     "Nomor rekening pada bank tersebut sudah terdaftar.",
   ck_payment_terms_hari_diskon:
     "Hari diskon tidak boleh melebihi jumlah hari jatuh tempo.",
+  ck_journal_entries_seimbang: "Jurnal yang diposting wajib seimbang (total debit = total kredit).",
+  ck_journal_items_satu_sisi: "Setiap baris jurnal hanya boleh berisi debit atau kredit.",
+  ck_bank_reconciliations_selesai_seimbang: "Rekonsiliasi hanya dapat diselesaikan bila selisihnya nol.",
 };
 
 /** Menerjemahkan galat PostgreSQL yang umum menjadi GalatAplikasi berbahasa Indonesia. */

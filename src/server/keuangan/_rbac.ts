@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { DAFTAR_IZIN, rolePermissions, roles, userRoles, type Izin } from "@/db/schema/keuangan";
 import { db } from "./_deps";
 
@@ -19,6 +19,13 @@ const IZIN_VALID = new Set<string>(DAFTAR_IZIN);
  * dan perubahan peran langsung berlaku.
  */
 export async function muatAksesPengguna(penggunaId: string): Promise<AksesPengguna> {
+  // Sebelum ada satu pun penugasan peran, pengguna yang sudah login boleh
+  // menyiapkan hak akses. Setelah ada penugasan, RBAC berlaku penuh.
+  const [hitung] = await db.select({ n: sql<number>`count(*)::int` }).from(userRoles);
+  if ((hitung?.n ?? 0) === 0) {
+    return { peran: [], aksesPenuh: true, izin: new Set(DAFTAR_IZIN) };
+  }
+
   const baris = await db
     .select({ kode: roles.kode, aksesPenuh: roles.aksesPenuh, izin: rolePermissions.izin })
     .from(userRoles)

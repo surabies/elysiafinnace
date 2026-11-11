@@ -19,12 +19,12 @@ describe("consume()", () => {
 describe("mutating requests", () => {
   test("return 429 with Retry-After once the per-IP budget is spent, even without a session", async () => {
     const headers = { "x-forwarded-for": "203.0.113.77", "content-type": "application/json" };
-    const body = JSON.stringify({ name: "spam", longitude: 1, latitude: 1 });
+    const body = JSON.stringify({ deskripsi: "spam", tanggal: "2026-01-01" });
     let lastStatus = 0;
     let retryAfter: string | null = null;
     let firstBlockedAt = -1;
     for (let i = 1; i <= 205; i++) {
-      const response = await api("/api/places", { method: "POST", headers, body });
+      const response = await api("/api/keuangan/jurnal", { method: "POST", headers, body });
       lastStatus = response.status;
       if (response.status === 429 && firstBlockedAt === -1) {
         firstBlockedAt = i;
@@ -39,10 +39,10 @@ describe("mutating requests", () => {
   });
 
   test("a different client is not affected", async () => {
-    const response = await api("/api/places", {
+    const response = await api("/api/keuangan/jurnal", {
       method: "POST",
       headers: { "x-forwarded-for": "203.0.113.78", "content-type": "application/json" },
-      body: JSON.stringify({ name: "ok", longitude: 1, latitude: 1 }),
+      body: JSON.stringify({ deskripsi: "ok", tanggal: "2026-01-01" }),
     });
     expect(response.status).toBe(401); // reaches the auth check, not rate limited
   });

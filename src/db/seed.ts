@@ -3,7 +3,7 @@
  * (Bun otomatis membaca .env, sama seperti saat menjalankan aplikasi.)
  */
 import { db } from "@/db";
-import { jalankanSeedKeuangan } from "./keuangan";
+import { jalankanSeedKeuangan } from "./seed/keuangan";
 
 try {
   await jalankanSeedKeuangan(db);

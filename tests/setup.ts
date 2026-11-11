@@ -15,7 +15,7 @@ import path from "node:path";
 import { Client } from "pg";
 
 const adminUrl = new URL(
-  process.env.TEST_DATABASE_ADMIN_URL ?? "postgres://app:app_dev_pw@localhost:5432/postgres",
+  process.env.TEST_DATABASE_ADMIN_URL ?? "postgres://app:app_dev_pw@localhost:5433/postgres",
 );
 export const TEST_DB_NAME = "app_test";
 

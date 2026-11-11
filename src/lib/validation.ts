@@ -6,17 +6,8 @@ import { z } from "zod";
  */
 export const LIMITS = {
   echoMessageMax: 500,
-  placeNameMax: 120,
-  lonMin: -180,
-  lonMax: 180,
-  latMin: -90,
-  latMax: 90,
-  radiusMinMeters: 1,
-  radiusMaxMeters: 50_000,
-  radiusDefaultMeters: 1_000,
   pageSizeMax: 100,
   pageSizeDefault: 20,
-  nearbyLimitDefault: 20,
   passwordMin: 8,
   passwordMax: 128,
   nameMax: 80,
@@ -38,32 +29,6 @@ export const signUpSchema = z.object({
     .string()
     .min(LIMITS.passwordMin, `Use at least ${LIMITS.passwordMin} characters`)
     .max(LIMITS.passwordMax, `Use at most ${LIMITS.passwordMax} characters`),
-});
-
-export const coordinateSchema = z.object({
-  longitude: z.coerce
-    .number("Enter a number")
-    .min(LIMITS.lonMin, `Longitude must be between ${LIMITS.lonMin} and ${LIMITS.lonMax}`)
-    .max(LIMITS.lonMax, `Longitude must be between ${LIMITS.lonMin} and ${LIMITS.lonMax}`),
-  latitude: z.coerce
-    .number("Enter a number")
-    .min(LIMITS.latMin, `Latitude must be between ${LIMITS.latMin} and ${LIMITS.latMax}`)
-    .max(LIMITS.latMax, `Latitude must be between ${LIMITS.latMin} and ${LIMITS.latMax}`),
-});
-
-export const placeFormSchema = coordinateSchema.extend({
-  name: z
-    .string()
-    .trim()
-    .min(1, "Enter a name")
-    .max(LIMITS.placeNameMax, `Use at most ${LIMITS.placeNameMax} characters`),
-});
-
-export const nearbyFormSchema = coordinateSchema.extend({
-  radius: z.coerce
-    .number("Enter a number")
-    .min(LIMITS.radiusMinMeters, `Radius must be at least ${LIMITS.radiusMinMeters} m`)
-    .max(LIMITS.radiusMaxMeters, `Radius must be at most ${LIMITS.radiusMaxMeters} m`),
 });
 
 export const echoFormSchema = z.object({

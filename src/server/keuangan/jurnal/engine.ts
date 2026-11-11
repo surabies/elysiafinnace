@@ -9,7 +9,7 @@ import {
 import { galat } from "../_umum";
 import { PREFIKS, nomorBerikut, type Tx } from "../_tx";
 import { SKALA_KURS, kaliKurs, keBigInt, keString } from "../_desimal";
-import { pastikanPeriodeTerbuka } from "../periode/service";
+import { pastikanPeriodeTerbuka, pastikanTahunBelumTutupBuku } from "../periode/service";
 
 /**
  * MESIN DOUBLE-ENTRY
@@ -189,6 +189,7 @@ const keBarisDb = (jurnalId: string, b: BarisTerhitung) => ({
 /** Membuat jurnal baru (DRAFT atau langsung POSTED). Harus dipanggil di dalam transaksi. */
 export async function simpanJurnal(tx: Tx, input: InputSimpanJurnal, oleh: string) {
   const hasil = await validasiDanHitung(tx, input);
+  if (input.posting) await pastikanTahunBelumTutupBuku(tx, input.tanggal);
   const periode = input.posting ? await pastikanPeriodeTerbuka(tx, input.tanggal) : null;
   const nomor = await nomorBerikut(tx, PREFIKS.JURNAL, input.tanggal);
   const [header] = await tx
@@ -262,6 +263,7 @@ export async function postingJurnalDraft(tx: Tx, id: string, oleh: string) {
       kurs: b.kurs,
     })),
   });
+  await pastikanTahunBelumTutupBuku(tx, jurnal.tanggal);
   const periode = await pastikanPeriodeTerbuka(tx, jurnal.tanggal);
   // Tulis ulang nilai dasar hasil validasi (deterministik, sama seperti saat draft disimpan).
   await tx.delete(journalItems).where(eq(journalItems.jurnalId, id));
@@ -300,6 +302,7 @@ export async function balikJurnal(
   if (asli.membalikJurnalId) throw galat.aturanBisnis(`Jurnal ${asli.nomor} adalah jurnal pembalik dan tidak dapat dibalik lagi.`);
   if (opsi.tanggal < asli.tanggal) throw galat.aturanBisnis("Tanggal jurnal pembalik tidak boleh sebelum tanggal jurnal asli.");
 
+  await pastikanTahunBelumTutupBuku(tx, opsi.tanggal);
   const periode = await pastikanPeriodeTerbuka(tx, opsi.tanggal);
   const baris = await tx.select().from(journalItems).where(eq(journalItems.jurnalId, id)).orderBy(journalItems.urutan);
   const nomor = await nomorBerikut(tx, PREFIKS.JURNAL, opsi.tanggal);

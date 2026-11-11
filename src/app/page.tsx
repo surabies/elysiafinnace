@@ -1,42 +1,68 @@
 import Link from "next/link";
-import { ContourMap } from "@/components/contour-map";
 import { Button } from "@/components/ui/button";
 
 const endpoints = [
-  { method: "GET", path: "/api/places/nearby?lon=&lat=&radius=", note: "Places within a radius, nearest first" },
-  { method: "GET", path: "/api/places", note: "Paginated list of every place" },
-  { method: "POST", path: "/api/places", note: "Save a place (signed in)" },
-  { method: "DELETE", path: "/api/places/:id", note: "Remove a place you own" },
-  { method: "GET", path: "/api/me", note: "The signed-in user" },
+  { method: "GET", path: "/api/keuangan/akun", note: "Bagan Akun (Chart of Accounts) Hierarkis" },
+  { method: "GET", path: "/api/keuangan/jurnal", note: "Jurnal Umum Double-Entry" },
+  { method: "GET", path: "/api/keuangan/buku-besar", note: "Buku Besar & Mutasi Akun" },
+  { method: "GET", path: "/api/keuangan/biaya", note: "Pencatatan Biaya Operasional" },
+  { method: "GET", path: "/api/keuangan/laporan/neraca", note: "Laporan Neraca (Balance Sheet)" },
+  { method: "GET", path: "/api/keuangan/laporan/laba-rugi", note: "Laporan Laba Rugi (Income Statement)" },
+  { method: "GET", path: "/api/keuangan/laporan/arus-kas", note: "Laporan Arus Kas (Cash Flow)" },
+  { method: "GET", path: "/api/keuangan/laporan/perubahan-modal", note: "Laporan Perubahan Modal" },
 ];
 
 export default function Home() {
   return (
     <main>
-      <section className="mx-auto grid w-full max-w-5xl items-center gap-10 px-4 py-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] lg:py-16">
+      <section className="mx-auto grid w-full max-w-5xl items-center gap-10 px-4 py-12 lg:grid-cols-[minmax(0,6fr)_minmax(0,5fr)] lg:py-16">
         <div>
-          <h1 className="text-4xl font-semibold leading-[1.05] sm:text-5xl">
-            Pin places. Ask what is within reach.
+          <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-primary">
+            Sistem ERP Keuangan Enterprise
+          </span>
+          <h1 className="mt-4 text-4xl font-semibold leading-[1.08] sm:text-5xl">
+            Laporan Keuangan & Akuntansi Double-Entry
           </h1>
           <p className="mt-5 max-w-prose text-lg text-muted-foreground">
-            Save locations to your account, then search by distance from any point. Distances run on
-            PostGIS, so a 500 m radius really is 500 metres.
+            Platform akuntansi terintegrasi dengan validasi ketat double-entry, multi-currency presisi desimal tanpa floating point,
+            bagan akun hierarkis, pelacakan persediaan, dan otomatisasi tutup buku.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild size="lg">
-              <Link href="/sign-up">Create an account</Link>
+              <Link href="/dashboard">Buka Dashboard</Link>
             </Button>
             <Button asChild size="lg" variant="outline">
-              <Link href="/playground">Try the search</Link>
+              <Link href="/sign-in">Masuk Akun</Link>
             </Button>
           </div>
         </div>
-        <ContourMap className="h-auto w-full" />
+
+        <div className="rounded-xl border bg-card p-6 shadow-sm">
+          <h2 className="text-xl font-semibold">Fondasi & Standar Akuntansi</h2>
+          <ul className="mt-4 space-y-3 text-sm text-muted-foreground">
+            <li className="flex items-start gap-2">
+              <span className="text-primary font-bold">✓</span>
+              <span><strong>Double-Entry Rigorous:</strong> Total debit dan kredit dijamin selalu seimbang sebelum posting.</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-primary font-bold">✓</span>
+              <span><strong>Akurasi Finansial:</strong> Tipe data numeric/desimal presisi tinggi bebas floating-point error.</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-primary font-bold">✓</span>
+              <span><strong>Pelaporan Real-time:</strong> Neraca, Laba Rugi, Perubahan Modal, dan Arus Kas.</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-primary font-bold">✓</span>
+              <span><strong>Keamanan RBAC:</strong> Pembatasan hak akses berbasis peran untuk integritas audit.</span>
+            </li>
+          </ul>
+        </div>
       </section>
 
       <section className="border-t">
         <div className="mx-auto w-full max-w-5xl px-4 py-10">
-          <h2 className="text-2xl font-semibold">What the API offers</h2>
+          <h2 className="text-2xl font-semibold">REST API Modul Keuangan</h2>
           <dl className="mt-5 divide-y rounded-lg border bg-card">
             {endpoints.map((endpoint) => (
               <div

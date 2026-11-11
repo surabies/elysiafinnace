@@ -108,16 +108,15 @@ describe("GET /api/me", () => {
 });
 
 describe("protected endpoints", () => {
-  test("POST /api/places and DELETE /api/places/:id need a session", async () => {
-    const create = await api(
-      "/api/places",
-      json({ name: "No auth", longitude: 1, latitude: 1 }),
-    );
+  test("keuangan routes need a session", async () => {
+    const create = await api("/api/keuangan/jurnal", {
+      method: "POST",
+      body: JSON.stringify({ deskripsi: "No auth", tanggal: "2026-01-01" }),
+      headers: { "content-type": "application/json" },
+    });
     expect(create.status).toBe(401);
 
-    const del = await api("/api/places/00000000-0000-4000-8000-000000000000", {
-      method: "DELETE",
-    });
-    expect(del.status).toBe(401);
+    const get = await api("/api/keuangan/akun");
+    expect(get.status).toBe(401);
   });
 });

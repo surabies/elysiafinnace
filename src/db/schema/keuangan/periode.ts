@@ -5,6 +5,7 @@ import {
   integer,
   pgEnum,
   pgTable,
+  primaryKey,
   smallint,
   text,
   timestamp,
@@ -53,7 +54,7 @@ export const documentSequences = pgTable(
     tahun: smallint("tahun").notNull(),
     nilaiTerakhir: integer("nilai_terakhir").notNull().default(0),
   },
-  (t) => [uniqueIndex("uq_document_sequences").on(t.prefiks, t.tahun)],
+  (t) => [primaryKey({ columns: [t.prefiks, t.tahun], name: "pk_document_sequences" })],
 );
 
 export type Periode = typeof fiscalPeriods.$inferSelect;

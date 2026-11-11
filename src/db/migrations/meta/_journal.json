@@ -5,15 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1793924585684,
-      "tag": "0000_enable_postgis",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1793924585955,
-      "tag": "0001_init_auth_and_places",
+      "when": 1794407467124,
+      "tag": "0000_pretty_sharon_carter",
       "breakpoints": true
     }
   ]

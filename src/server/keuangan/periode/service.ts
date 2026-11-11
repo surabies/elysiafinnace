@@ -1,5 +1,5 @@
 import { and, asc, eq, sql } from "drizzle-orm";
-import { fiscalPeriods, type Periode } from "@/db/schema/keuangan";
+import { fiscalPeriods, yearEndClosings, type Periode } from "@/db/schema/keuangan";
 import { db } from "../_deps";
 import { galat } from "../_umum";
 import type { Tx } from "../_tx";
@@ -26,6 +26,30 @@ export const namaPeriode = (p: Pick<Periode, "bulan" | "tahun">) => `${NAMA_BULA
  * sehingga penutupan periode yang berjalan bersamaan harus menunggu posting ini selesai.
  * Periode dibuat otomatis bila belum ada.
  */
+/** Menolak posting pada tahun yang sudah punya tutup buku aktif. */
+export async function pastikanTahunBelumTutupBuku(tx: Tx, tanggal: string) {
+  const tahun = Number(tanggal.slice(0, 4));
+  const [ada] = await tx
+    .select({ id: yearEndClosings.id })
+    .from(yearEndClosings)
+    .where(and(eq(yearEndClosings.tahun, tahun), eq(yearEndClosings.aktif, true)))
+    .limit(1);
+  if (ada) {
+    throw galat.aturanBisnis(
+      `Tahun ${tahun} sudah tutup buku. Batalkan tutup buku terlebih dahulu bila masih ada koreksi.`,
+    );
+  }
+}
+
+export async function tahunSudahTutupBuku(tahun: number) {
+  const [ada] = await db
+    .select({ id: yearEndClosings.id })
+    .from(yearEndClosings)
+    .where(and(eq(yearEndClosings.tahun, tahun), eq(yearEndClosings.aktif, true)))
+    .limit(1);
+  return Boolean(ada);
+}
+
 export async function pastikanPeriodeTerbuka(tx: Tx, tanggal: string): Promise<Periode> {
   const tahun = Number(tanggal.slice(0, 4));
   const bulan = Number(tanggal.slice(5, 7));
