@@ -291,5 +291,7 @@ Next.js (beta); it is intentionally not enabled, see `docs/DECISIONS.md` D-003.
 
 - [`docs/FEATURES.md`](docs/FEATURES.md): every feature and requirement, status and evidence.
 - [`docs/DECISIONS.md`](docs/DECISIONS.md): why things are the way they are, including defects found in production mode.
-#   e l y s i a f i n n a c e  
+#   e l y s i a f i n n a c e 
+
+ 
  
