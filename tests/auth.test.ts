@@ -6,7 +6,6 @@ import {
   authed,
   cookieHeader,
   createUser,
-  json,
   uniqueEmail,
 } from "./helpers";
 

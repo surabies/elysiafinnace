@@ -74,7 +74,7 @@ describe("error handling", () => {
     expect(response.status).toBe(404);
     expect(await response.json()).toEqual({
       success: false,
-      error: { code: "NOT_FOUND", message: "Resource not found" },
+      error: { code: "NOT_FOUND", message: "Endpoint tidak ditemukan." },
     });
   });
 
@@ -96,7 +96,7 @@ describe("error handling", () => {
       expect(response.status).toBe(500);
       expect(JSON.parse(text)).toEqual({
         success: false,
-        error: { code: "INTERNAL_ERROR", message: "Internal server error" },
+        error: { code: "INTERNAL_ERROR", message: "Terjadi kesalahan pada server. Silakan coba lagi." },
       });
       expect(text).not.toContain("secret-internal-detail");
       expect(text).not.toContain("postgres://");

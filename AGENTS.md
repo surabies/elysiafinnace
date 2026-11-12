@@ -7,3 +7,8 @@ This version has breaking changes — APIs, conventions, and file structure may 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
+
+## Project workflow (Elysia Finance)
+
+Before any backend/schema work, read `docs/ROADMAP.md`, the latest entry in `docs/SESSION-LOG.md` and `docs/ARCHITECTURE.md`. After finishing, tick tasks in ROADMAP.md and prepend a new entry to SESSION-LOG.md.
+

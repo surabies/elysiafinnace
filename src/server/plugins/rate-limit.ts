@@ -1,6 +1,6 @@
 import { Elysia } from "elysia";
 import { getEnv } from "@/lib/env";
-import { ApiError } from "../errors";
+import { ApiError } from "../core/errors";
 
 const WINDOW_MS = 60_000;
 const SWEEP_THRESHOLD = 5_000;

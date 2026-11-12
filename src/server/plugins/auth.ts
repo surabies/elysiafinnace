@@ -1,6 +1,6 @@
 import { Elysia } from "elysia";
 import { auth } from "@/lib/auth";
-import { ApiError } from "../errors";
+import { ApiError } from "../core/errors";
 
 /**
  * Adds the `auth: true` route option. Routes that set it receive `user` and

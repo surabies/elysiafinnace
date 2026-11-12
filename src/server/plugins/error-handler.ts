@@ -1,21 +1,17 @@
 import { Elysia } from "elysia";
-import { ApiError, errorBody } from "../errors";
+import { translateDbError } from "../core/db-errors";
+import { ApiError, errorBody } from "../core/errors";
 
-/** PostgreSQL error code, whether raw or wrapped by Drizzle (`cause`). */
-function pgErrorCode(error: unknown): string | undefined {
-  let current: unknown = error;
-  for (let depth = 0; depth < 3 && current && typeof current === "object"; depth++) {
-    const code = (current as { code?: unknown }).code;
-    if (typeof code === "string" && /^[0-9A-Z]{5}$/.test(code)) return code;
-    current = (current as { cause?: unknown }).cause;
-  }
-  return undefined;
+/** Pesan validasi: utamakan opsi `error` (Bahasa Indonesia) dari skema, lalu ringkasan TypeBox. */
+function issueMessage(issue: { schema?: unknown; summary?: string; message: string }): string {
+  const custom = (issue.schema as { error?: unknown } | undefined)?.error;
+  return typeof custom === "string" ? custom : (issue.summary ?? issue.message);
 }
 
 /**
- * One place that turns every failure into the same JSON shape:
+ * SATU tempat yang mengubah setiap kegagalan menjadi bentuk JSON yang sama:
  *   { "success": false, "error": { "code", "message", "details"? } }
- * Stack traces and internal messages are only ever written to the server log.
+ * Stack trace & pesan internal hanya ditulis ke log server.
  */
 export const errorHandler = new Elysia({ name: "error-handler" }).onError(
   { as: "global" },
@@ -28,36 +24,32 @@ export const errorHandler = new Elysia({ name: "error-handler" }).onError(
     switch (code) {
       case "VALIDATION": {
         set.status = 422;
-        // Only path + message: never echo the offending value back.
+        // Hanya path + pesan: nilai yang salah tidak pernah dikembalikan.
         const details = error.all.map((issue) => ({
-          path: issue.path || "(root)",
-          message: issue.summary ?? issue.message,
+          path: (issue.path ?? "").replace(/^\//, "") || "(root)",
+          message: issueMessage(issue),
         }));
-        return errorBody("VALIDATION_ERROR", "Request validation failed", details);
+        return errorBody("VALIDATION_ERROR", "Data yang dikirim tidak valid.", details);
       }
       case "NOT_FOUND":
         set.status = 404;
-        return errorBody("NOT_FOUND", "Resource not found");
+        return errorBody("NOT_FOUND", "Endpoint tidak ditemukan.");
       case "PARSE":
         set.status = 400;
-        return errorBody("BAD_REQUEST", "Malformed request body");
+        return errorBody("BAD_REQUEST", "Format body request tidak valid.");
       case "INVALID_COOKIE_SIGNATURE":
         set.status = 400;
-        return errorBody("BAD_REQUEST", "Invalid cookie");
+        return errorBody("BAD_REQUEST", "Cookie tidak valid.");
     }
 
-    const pg = pgErrorCode(error);
-    if (pg === "23505") {
-      set.status = 409;
-      return errorBody("CONFLICT", "The resource already exists");
-    }
-    if (pg === "23503") {
-      set.status = 409;
-      return errorBody("CONFLICT", "The request conflicts with related data");
+    const db = translateDbError(error);
+    if (db) {
+      set.status = db.status;
+      return errorBody(db.code, db.message, db.details);
     }
 
-    console.error("[api] unhandled error:", error);
+    console.error("[api] galat tak tertangani:", error);
     set.status = 500;
-    return errorBody("INTERNAL_ERROR", "Internal server error");
+    return errorBody("INTERNAL_ERROR", "Terjadi kesalahan pada server. Silakan coba lagi.");
   },
 );
