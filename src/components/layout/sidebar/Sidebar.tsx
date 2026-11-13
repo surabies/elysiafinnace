@@ -1,151 +1,50 @@
-import Link from "next/link";
-import Image from "next/image";
-import { useTheme } from "next-themes";
-import { usePathname } from "next/navigation";
-import SidebarContent from "./sidebaritems";
-import SimpleBar from "simplebar-react";
-import { Icon } from "@iconify/react";
-import FullLogo from "../shared/logo/FullLogo";
-import { Button } from "@/components/ui/button";
-import {
-  AMLogo,
-  AMMenu,
-  AMMenuItem,
-  AMSidebar,
-  AMSubmenu,
-} from "tailwind-sidebar";
-import "tailwind-sidebar/styles.css";
+"use client";
 
-interface SidebarItemType {
-  heading?: string;
-  id?: number | string;
-  name?: string;
-  title?: string;
-  icon?: string;
-  url?: string;
-  children?: SidebarItemType[];
-  disabled?: boolean;
-  isPro?: boolean;
+import SimpleBar from "simplebar-react";
+import "simplebar-react/dist/simplebar.min.css";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { SidebarBrand } from "./SidebarBrand";
+import { SidebarNav } from "./SidebarNav";
+import { useSidebar } from "./SidebarProvider";
+
+/** Isi sidebar yang sama dipakai untuk desktop dan drawer mobile. */
+function SidebarPanel({ collapsed }: { collapsed: boolean }) {
+  return (
+    <>
+      <SidebarBrand collapsed={collapsed} />
+      {/* 4.5rem = tinggi SidebarBrand (h-18) */}
+      <SimpleBar className="h-[calc(100dvh-4.5rem)]">
+        <SidebarNav collapsed={collapsed} />
+      </SimpleBar>
+    </>
+  );
 }
 
-const renderSidebarItems = (
-  items: SidebarItemType[],
-  currentPath: string,
-  onClose?: () => void,
-  isSubItem: boolean = false,
-) => {
-  return items.map((item, index) => {
-    const isSelected = currentPath === item?.url;
-    const IconComp = item.icon || null;
-
-    const iconElement = IconComp ? (
-      <Icon icon={IconComp} height={21} width={21} />
-    ) : (
-      <Icon icon={"ri:checkbox-blank-circle-line"} height={9} width={9} />
-    );
-
-    // Heading
-    if (item.heading) {
-      return (
-        <div className="mb-1" key={item.heading}>
-          <AMMenu
-            subHeading={item.heading}
-            ClassName="hide-menu leading-21 text-sidebar-foreground dark:text-sidebar-foreground font-bold uppercase text-xs"
-          />
-        </div>
-      );
-    }
-
-    // Submenu
-    if (item.children?.length) {
-      return (
-        <AMSubmenu
-          key={item.id}
-          icon={iconElement}
-          title={item.name}
-          ClassName="mt-0.5 text-sidebar-foreground dark:text-sidebar-foreground"
-        >
-          {renderSidebarItems(item.children, currentPath, onClose, true)}
-        </AMSubmenu>
-      );
-    }
-
-    // Regular menu item
-    const linkTarget = item.url?.startsWith("https") ? "_blank" : "_self";
-
-    const itemClassNames = isSubItem
-      ? `mt-0.5 text-sidebar-foreground dark:text-sidebar-foreground !hover:bg-transparent ${
-          isSelected ? "!bg-transparent !text-primary" : ""
-        } !px-1.5`
-      : `mt-0.5 text-sidebar-foreground dark:text-sidebar-foreground`;
-
-    return (
-      <div onClick={onClose} key={index}>
-        <AMMenuItem
-          key={item.id}
-          icon={iconElement}
-          isSelected={isSelected}
-          link={item.url || undefined}
-          target={linkTarget}
-          badge={!!item.isPro}
-          badgeColor="bg-lightsecondary"
-          badgeTextColor="text-secondary"
-          disabled={item.disabled}
-          badgeContent={item.isPro ? "Pro" : undefined}
-          component={Link}
-          className={`${itemClassNames}`}
-        >
-          <span className="truncate flex-1">{item.title || item.name}</span>
-        </AMMenuItem>
-      </div>
-    );
-  });
-};
-
-const SidebarLayout = ({ onClose }: { onClose?: () => void }) => {
-  const pathname = usePathname();
-  const { theme } = useTheme();
-
-  // Only allow "light" or "dark" for AMSidebar
-  const sidebarMode = theme === "light" || theme === "dark" ? theme : undefined;
+export default function Sidebar() {
+  const { collapsed, mobileOpen, setMobileOpen } = useSidebar();
 
   return (
-    <AMSidebar
-      collapsible="none"
-      animation={true}
-      showProfile={false}
-      width={"270px"}
-      showTrigger={false}
-      mode={sidebarMode}
-      className="fixed left-0 top-0 border border-border bg-sidebar dark:bg-sidebar z-10 h-screen"
-    >
-      {/* Logo */}
-      <div className="px-6 flex items-center brand-logo overflow-hidden">
-        <AMLogo component={Link} href="/" img="">
-          <FullLogo />
-        </AMLogo>
-      </div>
+    <>
+      {/* Desktop (xl+): menetap di kiri, lebar mengikuti --app-sidebar-width */}
+      <aside
+        id="app-sidebar"
+        aria-label="Sidebar"
+        data-collapsed={collapsed}
+        className="fixed inset-y-0 start-0 z-30 hidden w-(--app-sidebar-width) overflow-hidden border-e border-border bg-sidebar transition-[width] duration-300 ease-in-out xl:block"
+      >
+        <SidebarPanel collapsed={collapsed} />
+      </aside>
 
-      {/* Sidebar items */}
-
-      <SimpleBar className="h-[calc(100vh-100px)]">
-        <div className="px-6">
-          {SidebarContent.map((section, index) => (
-            <div key={index}>
-              {renderSidebarItems(
-                [
-                  ...(section.heading ? [{ heading: section.heading }] : []),
-                  ...(section.children || []),
-                ],
-                pathname,
-                onClose,
-              )}
-            </div>
-          ))}
-        </div>
-      </SimpleBar>
-    </AMSidebar>
+      {/* Mobile & tablet: drawer, selalu dalam mode expanded */}
+      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+        <SheetContent side="left" className="w-72 bg-sidebar p-0 xl:hidden">
+          <VisuallyHidden>
+            <SheetTitle>Menu navigasi</SheetTitle>
+          </VisuallyHidden>
+          <SidebarPanel collapsed={false} />
+        </SheetContent>
+      </Sheet>
+    </>
   );
-};
-
-export default SidebarLayout;
+}

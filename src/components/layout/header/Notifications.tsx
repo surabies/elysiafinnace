@@ -2,7 +2,7 @@
 
 import { Icon } from '@iconify/react'
 import Link from 'next/link'
-import * as MessagesData from './data'
+import * as MessagesData from '../types/data'
 import SimpleBar from 'simplebar-react'
 import 'simplebar-react/dist/simplebar.min.css'
 import {

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { SignUpForm } from "@/components/sign-up-form";
+import { SignUpForm } from "@/app/(auth)/sign-up/_components/sign-up-form";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 
 export const metadata: Metadata = { title: "Create account" };

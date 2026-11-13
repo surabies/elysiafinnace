@@ -1,114 +1,72 @@
-'use client'
-import { useState, useMemo } from 'react'
-import { Icon } from '@iconify/react'
-import SidebarContent, { MenuItem, ChildItem } from '../sidebar/sidebaritems'
+"use client";
 
-import SimpleBar from 'simplebar-react'
-import { Input } from '@/components/ui/input'
-import Link from 'next/link'
+import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Icon } from "@iconify/react";
+import {
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { IconButton } from "../shared/IconButton";
+import { SIDEBAR_MENU } from "../navigation/sidebar-menu";
+import { flattenNavigation } from "../navigation/utils";
 
-interface SearchResult {
-  name: string
-  url: string
-  path: string | undefined
-  icon?: string
-}
+// Indeks dibuat sekali saat modul dimuat; menu bersifat statis.
+const SEARCH_INDEX = flattenNavigation(SIDEBAR_MENU);
 
-function Search() {
-  const [query, setQuery] = useState('')
+/** Tombol ikon pencarian + command palette (Ctrl/Cmd + K). */
+export default function Search() {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
 
-  // 🔍 Recursive search through menu
-  const searchItems = (
-    items: (MenuItem | ChildItem)[],
-    q: string,
-    parentPath = ''
-  ): SearchResult[] => {
-    let results: SearchResult[] = []
-
-    items.forEach((item) => {
-      const currentPath = parentPath
-        ? `${parentPath} → ${item.name}`
-        : item.name
-
-      // If match found
-      if (item.name?.toLowerCase().includes(q.toLowerCase()) && item.url) {
-        results.push({
-          name: item.name,
-          url: item.url,
-          path: currentPath,
-          icon: item.icon,
-        })
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setOpen((value) => !value);
       }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
-      // Search deeper children
-      if (item.children) {
-        results = [...results, ...searchItems(item.children, q, currentPath)]
-      }
-    })
-
-    return results
-  }
-
-  // Memoize filtered results
-  const results = useMemo(() => {
-    if (!query.trim()) return []
-    return searchItems(SidebarContent, query)
-  }, [query])
+  const go = useCallback(
+    (href: string) => {
+      setOpen(false);
+      router.push(href);
+    },
+    [router],
+  );
 
   return (
-    <div className='relative w-full'>
-      <div className='flex items-center relative lg:w-xs mx-auto '>
-        <Icon
-          icon='solar:magnifer-linear'
-          width='18'
-          height='18'
-          className='absolute left-3 top-1/2 -translate-y-1/2'
-        />
+    <>
+      <IconButton
+        icon="solar:magnifer-linear"
+        label="Cari menu (Ctrl+K)"
+        onClick={() => setOpen(true)}
+      />
 
-        <Input
-          placeholder='Search....'
-          className='rounded-xl pl-10'
-          required
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-      </div>
-      <div
-        className={`absolute w-full  bg-background rounded-md top-11 z-10 start-0 shadow-md border border-border ${
-          Boolean(query) ? 'block' : 'hidden'
-        }`}>
-        <SimpleBar className='h-72 p-4 custom-scroll'>
-          {Boolean(results.length) ? (
-            results.map((item, i) => (
-              <Link
-                key={i}
-                href={item.url}
-                onClick={() => setQuery('')}
-                className='  p-2 mb-1.5 last:mb-0 flex items-center bg-input/30 gap-2 text-sm font-medium rounded-md hover:bg-primary/20 hover:text-primary w-full'>
-                <div className='flex items-center'>
-                  <Icon icon='iconoir:component' width={18} height={18} />
-                  <div className='ps-3'>
-                    <h5 className='mb-1 text-sm group-hover/link:text-primary'>
-                      {item.name}
-                    </h5>
-                    <span className='text-xs block truncate text-muted-foreground'>
-                      {item.path}
-                    </span>
-                  </div>
+      <CommandDialog open={open} onOpenChange={setOpen}>
+        <CommandInput placeholder="Cari menu, mis. faktur, neraca, pelanggan…" />
+        <CommandList>
+          <CommandEmpty>Menu tidak ditemukan.</CommandEmpty>
+          <CommandGroup heading="Menu">
+            {SEARCH_INDEX.map((item) => (
+              <CommandItem key={item.id} value={item.trail} onSelect={() => go(item.href)}>
+                {item.icon && <Icon icon={item.icon} width={18} height={18} />}
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium">{item.label}</span>
+                  <span className="text-xs text-muted-foreground">{item.trail}</span>
                 </div>
-              </Link>
-            ))
-          ) : (
-            <div className='flex items-center justify-center h-full'>
-              <h1 className='text-medium font-medium'>
-                No Components Found!
-              </h1>
-            </div>
-          )}
-        </SimpleBar>
-      </div>
-    </div>
-  )
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        </CommandList>
+      </CommandDialog>
+    </>
+  );
 }
-
-export default Search

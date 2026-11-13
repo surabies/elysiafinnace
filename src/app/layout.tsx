@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "@fontsource-variable/bricolage-grotesque";
 import "@fontsource-variable/public-sans";
 import "@fontsource-variable/jetbrains-mono";
+import { ThemeProvider } from "next-themes";
 import "./css/globals.css";
 
 export const metadata: Metadata = {
@@ -18,7 +19,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="id" suppressHydrationWarning>
-      <body className="min-h-dvh antialiased">{children}</body>
+      <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+        <body className="min-h-dvh antialiased">{children}</body>
+      </ThemeProvider>
     </html>
   );
 }

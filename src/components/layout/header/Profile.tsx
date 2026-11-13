@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { Icon } from '@iconify/react'
-import * as profileData from './data'
+import * as profileData from '../types/data'
 import SimpleBar from 'simplebar-react'
 import { Button } from '@/components/ui/button'
 import {

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { SignInForm } from "@/components/sign-in-form";
+import { SignInForm } from "@/app/(auth)/sign-in/_components/sign-in-form";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 
 export const metadata: Metadata = { title: "Sign in" };
