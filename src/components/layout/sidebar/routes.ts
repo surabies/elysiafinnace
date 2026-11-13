@@ -5,6 +5,7 @@
  */
 export const ROUTES = {
   dashboard: "/",
+  analytics: "/analytics",
   calendar: "/kalender",
 
   sales: {

@@ -7,19 +7,21 @@ const FullLogo = () => {
     <>
       {/* Dark Logo */}
       <Image
-        src="/images/logos/dark-logo.svg"
+        src="/images/logos/logo-light.png"
         alt="logo"
-        width={204}
-        height={36}
+        width={230}
+        height={32}
         className="block dark:hidden rtl:scale-x-[-1]"
+        priority={true}
       />
       {/* Light Logo */}
       <Image
-        src="/images/logos/light-logo.svg"
+        src="/images/logos/logo-dark.png"
         alt="logo"
-        width={204}
-        height={36}
+        width={230}
+        height={32}
         className="hidden dark:block rtl:scale-x-[-1]"
+        priority={true}
       />
     </>
   );

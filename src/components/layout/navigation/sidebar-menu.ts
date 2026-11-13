@@ -17,6 +17,12 @@ export const SIDEBAR_MENU: NavSection[] = [
         icon: "solar:widget-2-linear",
         href: ROUTES.dashboard,
       },
+      {
+        id: "Analytics",
+        label: "Analytics",
+        icon: "glyphs:analytics-bold",
+        href: ROUTES.analytics,
+      },
     ],
   },
   {

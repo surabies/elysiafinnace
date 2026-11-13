@@ -19,9 +19,12 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="id" suppressHydrationWarning>
-      <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
-        <body className="min-h-dvh antialiased">{children}</body>
-      </ThemeProvider>
+      <head />
+      <body className="min-h-dvh antialiased">
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+          {children}
+        </ThemeProvider>
+      </body>
     </html>
   );
 }
