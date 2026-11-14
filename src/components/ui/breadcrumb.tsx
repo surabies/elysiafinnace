@@ -1,6 +1,6 @@
 import * as React from "react"
 import { cn } from "cn"
-import { ChevronRight, MoreHorizontal } from "lucide-react"
+import { IconChevronRight as ChevronRight, IconDots as MoreHorizontal } from "@tabler/icons-react"
 import { Slot } from "radix-ui"
 
 function Breadcrumb({ ...props }: React.ComponentProps<"nav">) {

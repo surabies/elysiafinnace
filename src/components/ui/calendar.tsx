@@ -3,10 +3,10 @@
 import * as React from "react"
 import { cn } from "cn"
 import {
-  ChevronDownIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-} from "lucide-react"
+  IconChevronDown as ChevronDownIcon,
+  IconChevronLeft as ChevronLeftIcon,
+  IconChevronRight as ChevronRightIcon,
+} from "@tabler/icons-react"
 import {
   DayPicker,
   getDefaultClassNames,

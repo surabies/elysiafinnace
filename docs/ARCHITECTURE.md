@@ -61,3 +61,21 @@ src/
 | Test         | `bun test ./tests` (butuh Postgres; `docker compose up -d`) |
 | Migrasi baru | `bun run db:generate` lalu `bun run db:migrate`             |
 | Seed         | `bun run db:seed`                                           |
+
+## Standar Antarmuka & Frontend
+
+### 1. Standar Ikon UI (Icon Library Policy)
+- **HANYA gunakan `@tabler/icons-react`** di seluruh komponen proyek (sidebar, header, dialog, KPI card, dsb).
+- **Dilarang keras** menggunakan `@iconify/react` atau `lucide-react` (kedua pustaka ini telah dihapus permanen dari dependencies).
+- Setiap icon diimpor langsung sebagai komponen React (misal `IconLayoutDashboard`, `IconChevronDown`, `IconSearch`), mencegah overhead fetch SVG via network dan menjaga konsistensi visual stroke/size.
+
+### 2. Standar Navigasi & Menu Sidebar
+- Definisi URL halaman bersifat tersentralisasi di `src/components/layout/sidebar/routes.ts`.
+- Pohon menu navigasi tersentralisasi di `src/components/layout/navigation/sidebar-menu.ts`.
+- Struktur menu terbagi dalam 6 pilar fungsional (sinkron dengan backend M1–M14):
+  1. **Utama:** Dasbor & Analytics
+  2. **Transaksi:** Penjualan, Pembelian, Biaya Operasional, Kas & Bank
+  3. **Operasional & Persediaan:** Persediaan & Multi-Gudang, Aset Tetap & Depresiasi
+  4. **Akuntansi & Pajak:** COA & Jurnal, Dimensi Biaya, Anggaran, Tutup Buku, PPN & PPh
+  5. **Laporan Enterprise:** Finansial, Subledger & Aging AR/AP, Dagang, Multi-Periode, Konsolidasi Holding
+  6. **Otomasi & Sistem:** Transaksi Berulang, Pengingat Jatuh Tempo, API Key & Webhook, Profil & RBAC, Persetujuan, Kunci Tanggal, Audit Log, Diagnostik & Health Check

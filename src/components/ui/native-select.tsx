@@ -1,6 +1,6 @@
 import * as React from "react"
 import { cn } from "cn"
-import { ChevronDownIcon } from "lucide-react"
+import { IconChevronDown as ChevronDownIcon } from "@tabler/icons-react"
 
 function NativeSelect({
   className,

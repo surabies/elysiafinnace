@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { cn } from "cn"
-import { CheckIcon, ChevronRightIcon, CircleIcon } from "lucide-react"
+import { IconCheck as CheckIcon, IconChevronRight as ChevronRightIcon, IconCircleFilled as CircleIcon } from "@tabler/icons-react"
 import { ContextMenu as ContextMenuPrimitive } from "radix-ui"
 
 function ContextMenu({

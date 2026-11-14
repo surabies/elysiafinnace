@@ -22,17 +22,21 @@ export function Panel({
   return (
     <section
       aria-label={title}
-      className={cn("flex flex-col gap-5 rounded-xl border bg-card p-5", className)}
+      className={cn("flex flex-col gap-5 rounded-md border bg-card p-5", className)}
       {...props}
     >
-      <header className="flex items-start justify-between gap-4">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 space-y-1">
           <h2 className="text-base font-semibold leading-tight">{title}</h2>
           {description && (
             <p className="text-[13px] text-muted-foreground">{description}</p>
           )}
         </div>
-        {action && <div className="shrink-0">{action}</div>}
+        {action && (
+          <div className="flex max-w-full flex-wrap items-center justify-end gap-2 sm:shrink-0">
+            {action}
+          </div>
+        )}
       </header>
       {children}
     </section>

@@ -1,8 +1,20 @@
-import { and, asc, eq, sql } from "drizzle-orm";
-import { fiscalPeriods, yearEndClosings, type Periode } from "@/db/schema/keuangan";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import {
+  chartOfAccounts,
+  fiscalPeriods,
+  journalEntries,
+  journalItems,
+  yearEndClosings,
+  type Periode,
+} from "@/db/schema/keuangan";
 import { db } from "../shared/context";
 import { galat } from "@/server/core/errors";
 import type { Tx } from "../shared/transaction";
+import { akunByPeran } from "../akun/service";
+import { ambilMataUangDasar } from "../mata-uang/service";
+import { balikJurnal, simpanJurnal, type BarisJurnalInput } from "../jurnal/engine";
+import { keBigInt, keString } from "../shared/decimal";
+import { nullJikaKosong } from "../shared/text";
 
 const NAMA_BULAN = [
   "Januari", "Februari", "Maret", "April", "Mei", "Juni",
@@ -142,4 +154,247 @@ export async function bukaPeriode(id: string, oleh: string, cekTutupBuku: (tahun
     .returning();
   console.info(`[keuangan] Periode ${p.kode} dibuka kembali oleh ${oleh}.`);
   return hasil!;
+}
+
+/* ----------------------- Tutup Buku Akhir Tahun ----------------------- */
+
+export async function daftarTutupBukuTahunan() {
+  return db
+    .select({
+      id: yearEndClosings.id,
+      tahun: yearEndClosings.tahun,
+      jurnalId: yearEndClosings.jurnalId,
+      jurnalNomor: journalEntries.nomor,
+      jurnalTanggal: journalEntries.tanggal,
+      labaBersih: yearEndClosings.labaBersih,
+      aktif: yearEndClosings.aktif,
+      dibuatOleh: yearEndClosings.dibuatOleh,
+      dibuatPada: yearEndClosings.dibuatPada,
+      dibatalkanOleh: yearEndClosings.dibatalkanOleh,
+      dibatalkanPada: yearEndClosings.dibatalkanPada,
+    })
+    .from(yearEndClosings)
+    .innerJoin(journalEntries, eq(yearEndClosings.jurnalId, journalEntries.id))
+    .orderBy(desc(yearEndClosings.tahun));
+}
+
+export async function tutupBukuTahunan(tahun: number, keterangan: string | undefined, oleh: string) {
+  // 1. Validasi: semua 12 bulan dalam tahun tsb harus berstatus DITUTUP
+  const periodeTahun = await db.select().from(fiscalPeriods).where(eq(fiscalPeriods.tahun, tahun));
+  if (periodeTahun.length < 12 || periodeTahun.some((p) => p.status !== "DITUTUP")) {
+    throw galat.aturanBisnis(
+      `Semua 12 periode bulanan tahun ${tahun} harus berstatus DITUTUP sebelum tutup buku tahunan dapat dijalankan.`,
+    );
+  }
+
+  // 2. Validasi: tahun belum ditutup
+  if (await tahunSudahTutupBuku(tahun)) {
+    throw galat.aturanBisnis(`Tahun ${tahun} sudah tutup buku.`);
+  }
+
+  // 3. Validasi: tahun sebelumnya (bila ada) harus sudah tutup buku
+  const [tahunSebelumnyaAda] = await db
+    .select({ id: fiscalPeriods.id })
+    .from(fiscalPeriods)
+    .where(eq(fiscalPeriods.tahun, tahun - 1))
+    .limit(1);
+  if (tahunSebelumnyaAda && !(await tahunSudahTutupBuku(tahun - 1))) {
+    throw galat.aturanBisnis(
+      `Tutup buku tahun ${tahun - 1} terlebih dahulu sebelum menutup tahun ${tahun} (penutupan harus kronologis).`,
+    );
+  }
+
+  const tanggalMulai = `${tahun}-01-01`;
+  const tanggalSelesai = `${tahun}-12-31`;
+
+  // 4. Query semua akun nominal (Pendapatan & Beban) yang memiliki saldo pada tahun tsb
+  const akunNominal = await db
+    .select({
+      id: chartOfAccounts.id,
+      kode: chartOfAccounts.kode,
+      nama: chartOfAccounts.nama,
+      tipeAkun: chartOfAccounts.tipeAkun,
+      normalBalance: chartOfAccounts.normalBalance,
+      totalDebit: sql<string>`coalesce(sum(${journalItems.debitDasar}), 0)::text`,
+      totalKredit: sql<string>`coalesce(sum(${journalItems.kreditDasar}), 0)::text`,
+    })
+    .from(chartOfAccounts)
+    .innerJoin(journalItems, eq(journalItems.akunId, chartOfAccounts.id))
+    .innerJoin(journalEntries, eq(journalItems.jurnalId, journalEntries.id))
+    .where(
+      and(
+        eq(journalEntries.status, "POSTED"),
+        eq(chartOfAccounts.aktif, true),
+        inArray(chartOfAccounts.tipeAkun, ["PENDAPATAN", "BEBAN"]),
+        sql`${journalEntries.tanggal} >= ${tanggalMulai} AND ${journalEntries.tanggal} <= ${tanggalSelesai}`,
+        sql`${journalEntries.sumber} <> 'TUTUP_BUKU'`,
+      ),
+    )
+    .groupBy(
+      chartOfAccounts.id,
+      chartOfAccounts.kode,
+      chartOfAccounts.nama,
+      chartOfAccounts.tipeAkun,
+      chartOfAccounts.normalBalance,
+    );
+
+  const mataUangDasar = await ambilMataUangDasar();
+  const akunLabaDitahan = await akunByPeran("LABA_DITAHAN");
+
+  let totalPendapatanBig = BigInt(0);
+  let totalBebanBig = BigInt(0);
+  const barisJurnal: BarisJurnalInput[] = [];
+
+  for (const a of akunNominal) {
+    const d = keBigInt(a.totalDebit);
+    const k = keBigInt(a.totalKredit);
+
+    if (a.tipeAkun === "PENDAPATAN") {
+      // Normal Kredit: saldo = k - d. Menutup akun: Debit sebesar saldo bersih
+      const saldo = k - d;
+      if (saldo === BigInt(0)) continue;
+      totalPendapatanBig += saldo;
+
+      barisJurnal.push({
+        akunId: a.id,
+        debit: saldo > BigInt(0) ? keString(saldo) : undefined,
+        kredit: saldo < BigInt(0) ? keString(-saldo) : undefined,
+        deskripsi: `Penutupan pendapatan ${a.kode} - ${a.nama}`,
+        mataUangId: mataUangDasar.id,
+        kurs: "1.00000000",
+      });
+    } else {
+      // Normal Debit: saldo = d - k. Menutup akun: Kredit sebesar saldo bersih
+      const saldo = d - k;
+      if (saldo === BigInt(0)) continue;
+      totalBebanBig += saldo;
+
+      barisJurnal.push({
+        akunId: a.id,
+        debit: saldo < BigInt(0) ? keString(-saldo) : undefined,
+        kredit: saldo > BigInt(0) ? keString(saldo) : undefined,
+        deskripsi: `Penutupan beban ${a.kode} - ${a.nama}`,
+        mataUangId: mataUangDasar.id,
+        kurs: "1.00000000",
+      });
+    }
+  }
+
+  // Laba bersih = Total Pendapatan - Total Beban
+  const labaBersihBig = totalPendapatanBig - totalBebanBig;
+
+  if (labaBersihBig !== BigInt(0) || barisJurnal.length > 0) {
+    // Alokasi ke akun Laba Ditahan (Retained Earnings)
+    if (labaBersihBig > BigInt(0)) {
+      // Laba Bersih -> Kredit Laba Ditahan
+      barisJurnal.push({
+        akunId: akunLabaDitahan.id,
+        kredit: keString(labaBersihBig),
+        deskripsi: `Alokasi laba bersih tahun ${tahun} ke Laba Ditahan`,
+        mataUangId: mataUangDasar.id,
+        kurs: "1.00000000",
+      });
+    } else if (labaBersihBig < BigInt(0)) {
+      // Rugi Bersih -> Debit Laba Ditahan
+      barisJurnal.push({
+        akunId: akunLabaDitahan.id,
+        debit: keString(-labaBersihBig),
+        deskripsi: `Alokasi rugi bersih tahun ${tahun} ke Laba Ditahan`,
+        mataUangId: mataUangDasar.id,
+        kurs: "1.00000000",
+      });
+    }
+  }
+
+  if (barisJurnal.length === 0) {
+    throw galat.aturanBisnis(`Tidak ada saldo pendapatan atau beban untuk ditutup pada tahun ${tahun}.`);
+  }
+
+  return db.transaction(async (tx) => {
+    // Post jurnal penutup tahunan
+    const jurnal = await simpanJurnal(
+      tx,
+      {
+        tanggal: tanggalSelesai,
+        deskripsi: nullJikaKosong(keterangan) ?? `Jurnal penutup akhir tahun ${tahun} (Laba Ditahan)`,
+        sumber: "TUTUP_BUKU",
+        mataUangId: mataUangDasar.id,
+        kurs: "1.00000000",
+        baris: barisJurnal,
+        posting: true,
+      },
+      oleh,
+    );
+
+    const [closing] = await tx
+      .insert(yearEndClosings)
+      .values({
+        tahun,
+        jurnalId: jurnal.id,
+        labaBersih: keString(labaBersihBig),
+        aktif: true,
+        dibuatOleh: oleh,
+        diubahOleh: oleh,
+      })
+      .returning();
+
+    return {
+      id: closing!.id,
+      tahun,
+      labaBersih: closing!.labaBersih,
+      jurnal,
+    };
+  });
+}
+
+export async function batalkanTutupBukuTahunan(tahun: number, oleh: string) {
+  const [closing] = await db
+    .select()
+    .from(yearEndClosings)
+    .where(and(eq(yearEndClosings.tahun, tahun), eq(yearEndClosings.aktif, true)))
+    .limit(1);
+
+  if (!closing) {
+    throw galat.aturanBisnis(`Tutup buku tahun ${tahun} tidak ditemukan atau sudah tidak aktif.`);
+  }
+
+  // Cek apakah tahun sesudahnya masih tutup buku (harus dibatalkan mundur dari tahun terbaru)
+  const [tutupSesudahnya] = await db
+    .select({ tahun: yearEndClosings.tahun })
+    .from(yearEndClosings)
+    .where(and(eq(yearEndClosings.aktif, true), sql`${yearEndClosings.tahun} > ${tahun}`))
+    .limit(1);
+  if (tutupSesudahnya) {
+    throw galat.aturanBisnis(
+      `Batalkan tutup buku tahun ${tutupSesudahnya.tahun} terlebih dahulu (pembatalan harus kronologis mundur).`,
+    );
+  }
+
+  return db.transaction(async (tx) => {
+    // Balik jurnal penutup
+    const tanggalBalik = `${tahun + 1}-01-01`;
+    await balikJurnal(
+      tx,
+      closing.jurnalId,
+      {
+        tanggal: tanggalBalik,
+        deskripsi: `Pembatalan tutup buku akhir tahun ${tahun}`,
+        sumber: "PEMBALIK",
+      },
+      oleh,
+    );
+
+    const [hasil] = await tx
+      .update(yearEndClosings)
+      .set({
+        aktif: false,
+        dibatalkanOleh: oleh,
+        dibatalkanPada: new Date(),
+        diubahOleh: oleh,
+      })
+      .where(eq(yearEndClosings.id, closing.id))
+      .returning();
+
+    return hasil!;
+  });
 }

@@ -1,12 +1,12 @@
 "use client"
 
 import {
-  CircleCheckIcon,
-  InfoIcon,
-  Loader2Icon,
-  OctagonXIcon,
-  TriangleAlertIcon,
-} from "lucide-react"
+  IconAlertOctagon as OctagonXIcon,
+  IconAlertTriangle as TriangleAlertIcon,
+  IconCircleCheck as CircleCheckIcon,
+  IconInfoCircle as InfoIcon,
+  IconLoader2 as Loader2Icon,
+} from "@tabler/icons-react"
 import { useTheme } from "next-themes"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
 

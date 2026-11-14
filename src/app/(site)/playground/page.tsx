@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { EchoPanel } from "@/components/echo-panel";
+import { EchoPanel } from "@/app/(site)/playground/_components/echo-panel";
 
 export const metadata: Metadata = { title: "API Playground" };
 

@@ -25,3 +25,6 @@ export const rutaRekeningBank = new Elysia({ prefix: "/rekening-bank", name: "ke
     params: parameterId,
     body: skemaUbahRekening,
   });
+
+export { rutaTransaksiBank } from "./transaksi";
+export { rutaRekonsiliasiBank } from "./rekonsiliasi";

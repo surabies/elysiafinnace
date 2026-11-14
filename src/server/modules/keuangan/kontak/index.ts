@@ -2,12 +2,14 @@ import { Elysia, t } from "elysia";
 import { bacaHalaman } from "../shared/pagination";
 import { dasarKeuangan, izinPerMetode } from "../shared/access";
 import { ok } from "@/server/core/response";
-import { skema } from "../shared/schema";
+import { skema, skemaImportCsv } from "../shared/schema";
 import {
   skemaBuatKontak,
   skemaBuatTermin,
   skemaQueryKontak,
   skemaQueryTermin,
+  skemaSimpanAlamat,
+  skemaSimpanPic,
   skemaUbahKontak,
   skemaUbahTermin,
 } from "./model";
@@ -43,6 +45,7 @@ export const rutaKontak = new Elysia({ prefix: "/kontak", name: "keuangan.kontak
       const { halaman, ukuran, offset } = bacaHalaman(query);
       const { data, total } = await layanan.daftarKontak({
         jenis: query.jenis,
+        grup: query.grup,
         aktif: query.aktif,
         q: query.q,
         offset,
@@ -62,7 +65,52 @@ export const rutaKontak = new Elysia({ prefix: "/kontak", name: "keuangan.kontak
     },
     { body: skemaBuatKontak },
   )
+  .post(
+    "/import",
+    async ({ body, sesi, set }) => {
+      const hasil = await layanan.importKontak(body.csv, sesi.penggunaId);
+      set.status = 201;
+      return ok(hasil);
+    },
+    { body: skemaImportCsv },
+  )
   .patch("/:id", async ({ params, body, sesi }) => ok(await layanan.ubahKontak(params.id, body, sesi.penggunaId)), {
     params: parameterId,
     body: skemaUbahKontak,
-  });
+  })
+  .post(
+    "/:id/alamat",
+    async ({ params, body, set }) => {
+      const hasil = await layanan.tambahAlamatKontak(params.id, body);
+      set.status = 201;
+      return ok(hasil);
+    },
+    { params: parameterId, body: skemaSimpanAlamat },
+  )
+  .delete(
+    "/alamat/:alamatId",
+    async ({ params }) => ok(await layanan.hapusAlamatKontak(params.alamatId)),
+    { params: t.Object({ alamatId: skema.uuid("alamatId") }) },
+  )
+  .post(
+    "/:id/pic",
+    async ({ params, body, set }) => {
+      const hasil = await layanan.tambahPicKontak(params.id, body);
+      set.status = 201;
+      return ok(hasil);
+    },
+    { params: parameterId, body: skemaSimpanPic },
+  )
+  .delete(
+    "/pic/:picId",
+    async ({ params }) => ok(await layanan.hapusPicKontak(params.picId)),
+    { params: t.Object({ picId: skema.uuid("picId") }) },
+  )
+  .get(
+    "/:id/batas-kredit",
+    async ({ params, query }) => ok(await layanan.cekBatasKredit(params.id, query.nominal ?? "0")),
+    {
+      params: parameterId,
+      query: t.Object({ nominal: t.Optional(skema.uang("nominal")) }),
+    },
+  );

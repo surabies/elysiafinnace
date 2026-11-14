@@ -1,4 +1,4 @@
-import { t } from "elysia";
+import { t, type Static } from "elysia";
 
 /** Pembuat skema TypeBox dengan pesan galat Bahasa Indonesia (dipakai di model.ts tiap fitur). */
 export const skema = {
@@ -44,6 +44,11 @@ export const skema = {
       pattern: "^\\d{1,16}(\\.\\d{1,4})?$",
       error: `${label} harus berupa angka desimal tidak negatif (maks 4 desimal), dikirim sebagai string.`,
     }),
+  kuantitas: (label: string) =>
+    t.String({
+      pattern: "^\\d{1,16}(\\.\\d{1,4})?$",
+      error: `${label} harus berupa angka desimal tidak negatif (maks 4 desimal), dikirim sebagai string.`,
+    }),
   kurs: (label: string) =>
     t.String({
       pattern: "^\\d{1,12}(\\.\\d{1,8})?$",
@@ -67,3 +72,8 @@ export const skema = {
       { error: `${label} harus salah satu dari: ${daftar.join(", ")}.` },
     ),
 };
+
+export const skemaImportCsv = t.Object({
+  csv: t.String({ minLength: 1, error: "Konten CSV wajib diisi." }),
+});
+export type InputImportCsv = Static<typeof skemaImportCsv>;

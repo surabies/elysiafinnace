@@ -17,6 +17,7 @@ import {
 import { kolomAudit, kolomId, kolomWaktu, kurs, uang } from "./_helper";
 import { chartOfAccounts } from "./akun";
 import { bankAccounts } from "./bank";
+import { branches, departments, projects } from "./dimensi";
 import { STATUS_JURNAL, STATUS_REKONSILIASI, SUMBER_JURNAL } from "./konstanta";
 import { partners } from "./kontak";
 import { currencies, kolomMataUangTransaksi } from "./mata-uang";
@@ -47,6 +48,8 @@ export const journalEntries = pgTable(
     sumber: sumberJurnalEnum("sumber").notNull().default("MANUAL"),
     /** ID dokumen asal (faktur, biaya, pembayaran, dst.) untuk jurnal otomatis. */
     sumberId: uuid("sumber_id"),
+    cabangId: uuid("cabang_id").references(() => branches.id, { onDelete: "set null" }),
+    proyekId: uuid("proyek_id").references(() => projects.id, { onDelete: "set null" }),
     ...kolomMataUangTransaksi(),
     /** Total dalam mata uang dasar. */
     totalDebit: uang("total_debit").notNull().default("0"),
@@ -68,6 +71,8 @@ export const journalEntries = pgTable(
     index("idx_journal_entries_tanggal").on(t.tanggal),
     index("idx_journal_entries_status_tanggal").on(t.status, t.tanggal),
     index("idx_journal_entries_sumber").on(t.sumber, t.sumberId),
+    index("idx_journal_entries_cabang").on(t.cabangId),
+    index("idx_journal_entries_proyek").on(t.proyekId),
     check("ck_journal_entries_seimbang", sql`${t.status} <> 'POSTED' OR ${t.totalDebit} = ${t.totalKredit}`),
     check("ck_journal_entries_total_tidak_negatif", sql`${t.totalDebit} >= 0 AND ${t.totalKredit} >= 0`),
   ],
@@ -119,6 +124,10 @@ export const journalItems = pgTable(
       .notNull()
       .references(() => chartOfAccounts.id, { onDelete: "restrict" }),
     kontakId: uuid("kontak_id").references(() => partners.id, { onDelete: "restrict" }),
+    cabangId: uuid("cabang_id").references(() => branches.id, { onDelete: "set null" }),
+    departemenId: uuid("departemen_id").references(() => departments.id, { onDelete: "set null" }),
+    proyekId: uuid("proyek_id").references(() => projects.id, { onDelete: "set null" }),
+    tag: varchar("tag", { length: 100 }),
     deskripsi: text("deskripsi"),
     debit: uang("debit").notNull().default("0"),
     kredit: uang("kredit").notNull().default("0"),
@@ -137,6 +146,9 @@ export const journalItems = pgTable(
     index("idx_journal_items_jurnal").on(t.jurnalId),
     index("idx_journal_items_akun").on(t.akunId),
     index("idx_journal_items_rekonsiliasi").on(t.rekonsiliasiId),
+    index("idx_journal_items_cabang").on(t.cabangId),
+    index("idx_journal_items_departemen").on(t.departemenId),
+    index("idx_journal_items_proyek").on(t.proyekId),
     check("ck_journal_items_tidak_negatif", sql`${t.debit} >= 0 AND ${t.kredit} >= 0 AND ${t.debitDasar} >= 0 AND ${t.kreditDasar} >= 0`),
     check("ck_journal_items_satu_sisi", sql`(${t.debit} = 0) <> (${t.kredit} = 0)`),
     check("ck_journal_items_kurs_positif", sql`${t.kurs} > 0`),

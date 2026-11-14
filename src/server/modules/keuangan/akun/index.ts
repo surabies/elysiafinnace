@@ -1,7 +1,7 @@
 import { Elysia, t } from "elysia";
 import { dasarKeuangan, izinPerMetode } from "../shared/access";
 import { ok } from "@/server/core/response";
-import { skema } from "../shared/schema";
+import { skema, skemaImportCsv } from "../shared/schema";
 import { skemaBuatAkun, skemaQueryAkun, skemaQueryPohonAkun, skemaUbahAkun } from "./model";
 import * as layanan from "./service";
 
@@ -23,6 +23,15 @@ export const rutaAkun = new Elysia({ prefix: "/akun", name: "keuangan.akun" })
       return ok(hasil);
     },
     { body: skemaBuatAkun },
+  )
+  .post(
+    "/import",
+    async ({ body, sesi, set }) => {
+      const hasil = await layanan.importAkun(body.csv, sesi.penggunaId);
+      set.status = 201;
+      return ok(hasil);
+    },
+    { body: skemaImportCsv },
   )
   .patch("/:id", async ({ params, body, sesi }) => ok(await layanan.ubahAkun(params.id, body, sesi.penggunaId)), {
     params: parameterId,

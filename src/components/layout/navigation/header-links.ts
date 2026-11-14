@@ -13,8 +13,8 @@ export const HEADER_LINKS: HeaderLink[] = [
   {
     id: "reports",
     label: "Laporan",
-    href: ROUTES.reports.balanceSheet,
-    matchPrefix: ROUTES.reports.prefix,
+    href: ROUTES.reports.financial,
+    matchPrefix: "/laporan",
   },
   { id: "calendar", label: "Kalender", href: ROUTES.calendar },
   { id: "help", label: "Bantuan", href: ROUTES.help.center },

@@ -1,10 +1,10 @@
 import * as React from "react"
 import { cn } from "cn"
 import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  MoreHorizontalIcon,
-} from "lucide-react"
+  IconChevronLeft as ChevronLeftIcon,
+  IconChevronRight as ChevronRightIcon,
+  IconDots as MoreHorizontalIcon,
+} from "@tabler/icons-react"
 
 import { buttonVariants, type Button } from "@/components/ui/button"
 

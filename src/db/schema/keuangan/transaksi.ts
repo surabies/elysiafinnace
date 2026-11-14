@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { check, date, index, pgEnum, pgTable, smallint, text, timestamp, uuid, varchar } from "drizzle-orm/pg-core";
-import { kolomAudit, kolomId, kolomWaktu, uang } from "./_helper";
+import { kolomAudit, kolomId, kolomWaktu, kurs, uang } from "./_helper";
 import { chartOfAccounts } from "./akun";
 import { bankAccounts } from "./bank";
 import { JENIS_MUTASI_BANK, METODE_BAYAR_BIAYA, STATUS_DOKUMEN } from "./konstanta";
@@ -78,7 +78,7 @@ export const expenseItems = pgTable(
  * Mutasi kas/bank langsung (di luar faktur & biaya):
  *   MASUK    : (Dr) Kas/Bank      (Cr) akun lawan
  *   KELUAR   : (Dr) akun lawan    (Cr) Kas/Bank
- *   TRANSFER : (Dr) Kas/Bank tujuan (Cr) Kas/Bank asal  (mata uang kedua rekening harus sama)
+ *   TRANSFER : (Dr) Kas/Bank tujuan (Cr) Kas/Bank asal
  */
 export const bankTransactions = pgTable(
   "bank_transactions",
@@ -91,6 +91,10 @@ export const bankTransactions = pgTable(
       .notNull()
       .references(() => bankAccounts.id, { onDelete: "restrict" }),
     rekeningTujuanId: uuid("rekening_tujuan_id").references(() => bankAccounts.id, { onDelete: "restrict" }),
+    jumlahTujuan: uang("jumlah_tujuan"),
+    kursTujuan: kurs("kurs_tujuan"),
+    biayaAdmin: uang("biaya_admin").notNull().default("0"),
+    akunBiayaAdminId: uuid("akun_biaya_admin_id").references(() => chartOfAccounts.id, { onDelete: "restrict" }),
     akunLawanId: uuid("akun_lawan_id").references(() => chartOfAccounts.id, { onDelete: "restrict" }),
     kontakId: uuid("kontak_id").references(() => partners.id, { onDelete: "restrict" }),
     referensi: varchar("referensi", { length: 100 }),
@@ -108,6 +112,7 @@ export const bankTransactions = pgTable(
       "ck_bank_transactions_lawan",
       sql`(${t.jenis} = 'TRANSFER' AND ${t.rekeningTujuanId} IS NOT NULL AND ${t.rekeningTujuanId} <> ${t.rekeningBankId}) OR (${t.jenis} <> 'TRANSFER' AND ${t.akunLawanId} IS NOT NULL)`,
     ),
+    check("ck_bank_transactions_biaya_admin", sql`${t.biayaAdmin} >= 0`),
   ],
 );
 

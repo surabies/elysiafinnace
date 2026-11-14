@@ -10,6 +10,7 @@ import { galat } from "@/server/core/errors";
 import { PREFIKS, nomorBerikut, type Tx } from "../shared/transaction";
 import { SKALA_KURS, kaliKurs, keBigInt, keString } from "../shared/decimal";
 import { pastikanPeriodeTerbuka, pastikanTahunBelumTutupBuku } from "../periode/service";
+import { pastikanTransaksiTidakTerkunci } from "../kontrol/service";
 
 /**
  * MESIN DOUBLE-ENTRY
@@ -28,6 +29,10 @@ export type BarisJurnalInput = {
   kredit?: string;
   deskripsi?: string | null;
   kontakId?: string | null;
+  cabangId?: string | null;
+  departemenId?: string | null;
+  proyekId?: string | null;
+  tag?: string | null;
   /** Default: mata uang header. */
   mataUangId?: string;
   /** Default: kurs header. */
@@ -45,6 +50,8 @@ export type InputSimpanJurnal = {
   referensi?: string | null;
   sumber: SumberJurnal;
   sumberId?: string | null;
+  cabangId?: string | null;
+  proyekId?: string | null;
   mataUangId: string;
   kurs: string;
   baris: BarisJurnalInput[];
@@ -56,6 +63,10 @@ type BarisTerhitung = {
   urutan: number;
   akunId: string;
   kontakId: string | null;
+  cabangId: string | null;
+  departemenId: string | null;
+  proyekId: string | null;
+  tag: string | null;
   deskripsi: string | null;
   mataUangId: string;
   kurs: bigint;
@@ -114,6 +125,10 @@ export async function validasiDanHitung(tx: Tx, input: Omit<InputSimpanJurnal, "
       urutan: no,
       akunId: akun.id,
       kontakId: b.kontakId ?? null,
+      cabangId: b.cabangId ?? input.cabangId ?? null,
+      departemenId: b.departemenId ?? null,
+      proyekId: b.proyekId ?? input.proyekId ?? null,
+      tag: b.tag?.trim() || null,
       deskripsi: b.deskripsi?.trim() || null,
       mataUangId,
       kurs,
@@ -177,6 +192,10 @@ const keBarisDb = (jurnalId: string, b: BarisTerhitung) => ({
   urutan: b.urutan,
   akunId: b.akunId,
   kontakId: b.kontakId,
+  cabangId: b.cabangId,
+  departemenId: b.departemenId,
+  proyekId: b.proyekId,
+  tag: b.tag,
   deskripsi: b.deskripsi,
   mataUangId: b.mataUangId,
   kurs: keString(b.kurs, SKALA_KURS),
@@ -189,7 +208,10 @@ const keBarisDb = (jurnalId: string, b: BarisTerhitung) => ({
 /** Membuat jurnal baru (DRAFT atau langsung POSTED). Harus dipanggil di dalam transaksi. */
 export async function simpanJurnal(tx: Tx, input: InputSimpanJurnal, oleh: string) {
   const hasil = await validasiDanHitung(tx, input);
-  if (input.posting) await pastikanTahunBelumTutupBuku(tx, input.tanggal);
+  if (input.posting) {
+    await pastikanTransaksiTidakTerkunci(input.tanggal, oleh);
+    await pastikanTahunBelumTutupBuku(tx, input.tanggal);
+  }
   const periode = input.posting ? await pastikanPeriodeTerbuka(tx, input.tanggal) : null;
   const nomor = await nomorBerikut(tx, PREFIKS.JURNAL, input.tanggal);
   const [header] = await tx
@@ -203,6 +225,8 @@ export async function simpanJurnal(tx: Tx, input: InputSimpanJurnal, oleh: strin
       status: input.posting ? "POSTED" : "DRAFT",
       sumber: input.sumber,
       sumberId: input.sumberId ?? null,
+      cabangId: input.cabangId ?? null,
+      proyekId: input.proyekId ?? null,
       mataUangId: input.mataUangId,
       kurs: input.kurs,
       totalDebit: keString(hasil.totalDebit),
@@ -230,6 +254,8 @@ export async function gantiJurnalDraft(tx: Tx, id: string, input: Omit<InputSimp
       tanggal: input.tanggal,
       referensi: input.referensi?.trim() || null,
       deskripsi: input.deskripsi.trim(),
+      cabangId: input.cabangId ?? null,
+      proyekId: input.proyekId ?? null,
       mataUangId: input.mataUangId,
       kurs: input.kurs,
       totalDebit: keString(hasil.totalDebit),
@@ -263,6 +289,7 @@ export async function postingJurnalDraft(tx: Tx, id: string, oleh: string) {
       kurs: b.kurs,
     })),
   });
+  await pastikanTransaksiTidakTerkunci(jurnal.tanggal, oleh);
   await pastikanTahunBelumTutupBuku(tx, jurnal.tanggal);
   const periode = await pastikanPeriodeTerbuka(tx, jurnal.tanggal);
   // Tulis ulang nilai dasar hasil validasi (deterministik, sama seperti saat draft disimpan).
@@ -302,6 +329,7 @@ export async function balikJurnal(
   if (asli.membalikJurnalId) throw galat.aturanBisnis(`Jurnal ${asli.nomor} adalah jurnal pembalik dan tidak dapat dibalik lagi.`);
   if (opsi.tanggal < asli.tanggal) throw galat.aturanBisnis("Tanggal jurnal pembalik tidak boleh sebelum tanggal jurnal asli.");
 
+  await pastikanTransaksiTidakTerkunci(opsi.tanggal, oleh);
   await pastikanTahunBelumTutupBuku(tx, opsi.tanggal);
   const periode = await pastikanPeriodeTerbuka(tx, opsi.tanggal);
   const baris = await tx.select().from(journalItems).where(eq(journalItems.jurnalId, id)).orderBy(journalItems.urutan);

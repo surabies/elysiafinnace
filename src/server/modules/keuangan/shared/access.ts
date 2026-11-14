@@ -46,7 +46,26 @@ export const wajibIzin =
  * GET/HEAD membutuhkan `<modul>.baca`, metode lain `<modul>.kelola`.
  */
 export const izinPerMetode =
-  (modul: "master_data") =>
+  (
+    modul:
+      | "master_data"
+      | "persediaan"
+      | "jurnal"
+      | "biaya"
+      | "pembelian"
+      | "penjualan"
+      | "pembayaran"
+      | "kas_bank"
+      | "pajak"
+      | "aset_tetap"
+      | "dimensi"
+      | "anggaran"
+      | "periode"
+      | "rbac"
+      | "perusahaan"
+      | "otomasi"
+      | "integrasi",
+  ) =>
   ({ sesi, request }: { sesi: SesiAkses; request: Request }) => {
     const baca = request.method === "GET" || request.method === "HEAD";
     pastikanIzin(sesi, `${modul}.${baca ? "baca" : "kelola"}` as Izin);

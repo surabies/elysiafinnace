@@ -13,6 +13,7 @@ import {
 import { db } from "../shared/context";
 import { escapeLike, nullJikaKosong } from "../shared/text";
 import { galat } from "@/server/core/errors";
+import { parseCsvKeObjek } from "../shared/csv";
 import type { InputBuatAkun, InputUbahAkun } from "./model";
 
 const NAMA_OBJEK = "Akun";
@@ -258,23 +259,81 @@ export async function ubahAkun(id: string, input: InputUbahAkun, oleh: string) {
 
 /**
  * Memastikan sebuah akun layak dipakai sebagai rujukan di modul lain:
- * aktif, akun detail (bisa diposting), bertipe tertentu, dan (opsional) berperan tertentu.
- * Dipakai master item, rekening bank, dan nanti modul transaksi.
+ * aktif, akun detail (bisa diposting), bertipe tertentu (opsional), dan berperan tertentu (opsional).
+ * Dipakai master item, rekening bank, dan modul transaksi.
  */
 export async function pastikanAkunDetail(
   id: string,
-  syarat: { label: string; tipe: Akun["tipeAkun"]; peran?: PeranSistem },
+  syarat: { label: string; tipe?: Akun["tipeAkun"]; peran?: PeranSistem },
 ): Promise<Akun> {
   const [akun] = await db.select().from(chartOfAccounts).where(eq(chartOfAccounts.id, id));
   if (!akun) throw galat.tidakDitemukan(syarat.label);
   const nama = `${syarat.label} ${akun.kode} - ${akun.nama}`;
   if (!akun.aktif) throw galat.aturanBisnis(`${nama} tidak aktif.`);
   if (!akun.bisaDiposting) throw galat.aturanBisnis(`${nama} adalah akun header dan tidak dapat dipakai untuk transaksi.`);
-  if (akun.tipeAkun !== syarat.tipe) {
+  if (syarat.tipe && akun.tipeAkun !== syarat.tipe) {
     throw galat.aturanBisnis(`${nama} bertipe ${akun.tipeAkun}; yang dibutuhkan bertipe ${syarat.tipe}.`);
   }
   if (syarat.peran && akun.peranSistem !== syarat.peran) {
     throw galat.aturanBisnis(`${nama} tidak berperan ${syarat.peran}.`);
   }
   return akun;
+}
+
+export async function importAkun(csv: string, oleh: string) {
+  const baris = parseCsvKeObjek(csv);
+  if (baris.length === 0) throw galat.aturanBisnis("CSV kosong atau format tidak sesuai.");
+
+  const hasil = [];
+  const petaKodeKeId = new Map<string, string>();
+
+  // Ambil akun yang sudah ada untuk resolusi kode induk
+  const semuaAkun = await db.select({ id: chartOfAccounts.id, kode: chartOfAccounts.kode }).from(chartOfAccounts);
+  for (const a of semuaAkun) {
+    petaKodeKeId.set(a.kode, a.id);
+  }
+
+  // Ambil mata uang yang ada
+  const semuaMu = await db.select({ id: currencies.id, kode: currencies.kode }).from(currencies);
+  const petaMu = new Map(semuaMu.map((m) => [m.kode.toUpperCase(), m.id]));
+
+  for (const row of baris) {
+    const kode = (row.kode || row.kode_akun || "").trim();
+    const nama = (row.nama || row.nama_akun || "").trim();
+    const tipeAkun = (row.tipe_akun || row.tipe || "").trim().toUpperCase() as InputBuatAkun["tipeAkun"];
+    if (!kode || !nama || !tipeAkun) continue;
+
+    const kodeInduk = (row.kode_induk || row.induk || "").trim();
+    const indukId = kodeInduk ? petaKodeKeId.get(kodeInduk) ?? null : null;
+
+    const kodeMu = (row.mata_uang || row.mata_uang_kode || "").trim().toUpperCase();
+    const mataUangId = kodeMu ? petaMu.get(kodeMu) ?? null : null;
+
+    const peranSistem = (row.peran_sistem || row.peran || "").trim().toUpperCase() as PeranSistem;
+    const bisaDiposting = row.bisa_diposting !== undefined && row.bisa_diposting !== ""
+      ? row.bisa_diposting.toLowerCase() === "true" || row.bisa_diposting === "1"
+      : true;
+    const adalahAkunKontra = row.adalah_akun_kontra !== undefined && row.adalah_akun_kontra !== ""
+      ? row.adalah_akun_kontra.toLowerCase() === "true" || row.adalah_akun_kontra === "1"
+      : false;
+
+    const baru = await buatAkun(
+      {
+        kode,
+        nama,
+        tipeAkun,
+        indukId: indukId ?? undefined,
+        mataUangId: mataUangId ?? undefined,
+        peranSistem: peranSistem || undefined,
+        bisaDiposting,
+        adalahAkunKontra,
+      },
+      oleh,
+    );
+
+    petaKodeKeId.set(baru.kode, baru.id);
+    hasil.push(baru);
+  }
+
+  return { totalDiimpor: hasil.length, data: hasil };
 }

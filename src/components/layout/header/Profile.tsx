@@ -1,69 +1,67 @@
-'use client'
+"use client";
 
-import Link from 'next/link'
-import Image from 'next/image'
-import { Icon } from '@iconify/react'
-import * as profileData from '../types/data'
-import SimpleBar from 'simplebar-react'
-import { Button } from '@/components/ui/button'
+import Image from "next/image";
+import Link from "next/link";
+import SimpleBar from "simplebar-react";
+import * as profileData from "../types/data";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
   DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu'
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-const Profile = () => {
-  return (
-    <div className='relative group/menu ps-15 shrink-0'>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <span className='hover:text-primary hover:bg-lightprimary rounded-full flex justify-center items-center cursor-pointer group-hover/menu:bg-lightprimary group-hover/menu:text-primary'>
-            <Image
-              src='/images/profile/user-1.jpg'
-              alt='logo'
-              height={35}
-              width={35}
-              className='rounded-full'
-            />
-          </span>
-        </DropdownMenuTrigger>
+const Profile = () => (
+  <div className="shrink-0 ps-15">
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label="Buka menu profil"
+          className="flex size-10 items-center justify-center rounded-full transition-colors hover:bg-accent data-[state=open]:bg-accent"
+        >
+          <Image
+            src="/images/profile/user-1.jpg"
+            alt=""
+            height={35}
+            width={35}
+            className="rounded-full"
+          />
+        </button>
+      </DropdownMenuTrigger>
 
-        <DropdownMenuContent
-          align='end'
-          className='w-screen sm:w-[200px] pb-4 pt-2 rounded-sm'>
-          <SimpleBar>
-            {profileData.profileDD.map((item, index) => (
-              <DropdownMenuItem key={index} asChild>
-                <Link
-                  href={item.url}
-                  className='px-4 py-2 flex justify-between items-center group/link w-full hover:bg-lightprimary hover:text-primary'>
-                  <div className='flex items-center gap-3 w-full'>
-                    <Icon
-                      icon={item.icon}
-                      className='text-lg text-muted-foreground group-hover/link:text-primary'
-                    />
-                    <h5 className='mb-0 text-sm text-muted-foreground group-hover/link:text-primary'>
-                      {item.title}
-                    </h5>
-                  </div>
-                </Link>
-              </DropdownMenuItem>
-            ))}
-          </SimpleBar>
+      <DropdownMenuContent
+        align="end"
+        className="w-screen pb-4 pt-2 sm:w-50"
+      >
+        <SimpleBar>
+          {profileData.profileDD.map((item) => (
+            <DropdownMenuItem key={item.url} asChild>
+              <Link
+                href={item.url}
+                className="group/link flex w-full items-center gap-3 px-4 py-2 text-label-14 transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+              >
+                <item.icon className="size-5 text-muted-foreground group-hover/link:text-accent-foreground group-focus/link:text-accent-foreground" />
+                <span className="text-muted-foreground group-hover/link:text-accent-foreground group-focus/link:text-accent-foreground">
+                  {item.title}
+                </span>
+              </Link>
+            </DropdownMenuItem>
+          ))}
+        </SimpleBar>
 
-          <DropdownMenuSeparator className='my-2' />
+        <DropdownMenuSeparator className="my-2" />
 
-          <div className='px-4'>
-            <Button variant='outline' asChild className='w-full rounded-md'>
-              <Link href='/auth/login'>Logout</Link>
-            </Button>
-          </div>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
-  )
-}
+        <div className="px-4">
+          <Button variant="outline" asChild className="w-full">
+            <Link href="/auth/login">Logout</Link>
+          </Button>
+        </div>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  </div>
+);
 
-export default Profile
+export default Profile;

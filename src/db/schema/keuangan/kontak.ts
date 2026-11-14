@@ -50,7 +50,9 @@ export const partners = pgTable(
     adalahPelanggan: boolean("adalah_pelanggan").notNull().default(false),
     adalahPemasok: boolean("adalah_pemasok").notNull().default(false),
     npwp: varchar("npwp", { length: 32 }),
+    nik: varchar("nik", { length: 16 }),
     adalahPkp: boolean("adalah_pkp").notNull().default(false),
+    grup: varchar("grup", { length: 50 }),
     namaKontak: varchar("nama_kontak", { length: 150 }),
     email: varchar("email", { length: 150 }),
     telepon: varchar("telepon", { length: 30 }),
@@ -72,10 +74,57 @@ export const partners = pgTable(
   (t) => [
     index("idx_partners_nama").on(t.nama),
     index("idx_partners_peran").on(t.adalahPelanggan, t.adalahPemasok),
+    index("idx_partners_grup").on(t.grup),
     check("ck_partners_minimal_satu_peran", sql`${t.adalahPelanggan} OR ${t.adalahPemasok}`),
     check("ck_partners_batas_kredit", sql`${t.batasKredit} >= 0`),
   ],
 );
 
+/**
+ * Multi-alamat untuk kontak (alamat penagihan, pengiriman, gudang, kantor cabang).
+ */
+export const partnerAddresses = pgTable(
+  "partner_addresses",
+  {
+    id: kolomId(),
+    kontakId: uuid("kontak_id")
+      .notNull()
+      .references(() => partners.id, { onDelete: "cascade" }),
+    judul: varchar("judul", { length: 100 }).notNull(),
+    jenis: varchar("jenis", { length: 30 }).notNull().default("UTAMA"),
+    alamat: text("alamat").notNull(),
+    kota: varchar("kota", { length: 100 }),
+    provinsi: varchar("provinsi", { length: 100 }),
+    kodePos: varchar("kode_pos", { length: 10 }),
+    negara: varchar("negara", { length: 100 }).notNull().default("Indonesia"),
+    adalahUtama: boolean("adalah_utama").notNull().default(false),
+    ...kolomWaktu,
+  },
+  (t) => [index("idx_partner_addresses_kontak").on(t.kontakId)],
+);
+
+/**
+ * Multi-kontak person (PIC) per kontak/perusahaan (Finance, Purchasing, Warehouse, Direksi).
+ */
+export const partnerContacts = pgTable(
+  "partner_contacts",
+  {
+    id: kolomId(),
+    kontakId: uuid("kontak_id")
+      .notNull()
+      .references(() => partners.id, { onDelete: "cascade" }),
+    nama: varchar("nama", { length: 150 }).notNull(),
+    jabatan: varchar("jabatan", { length: 100 }),
+    email: varchar("email", { length: 150 }),
+    telepon: varchar("telepon", { length: 30 }),
+    ponsel: varchar("ponsel", { length: 30 }),
+    adalahUtama: boolean("adalah_utama").notNull().default(false),
+    ...kolomWaktu,
+  },
+  (t) => [index("idx_partner_contacts_kontak").on(t.kontakId)],
+);
+
 export type Kontak = typeof partners.$inferSelect;
 export type TerminPembayaran = typeof paymentTerms.$inferSelect;
+export type AlamatKontak = typeof partnerAddresses.$inferSelect;
+export type PicKontak = typeof partnerContacts.$inferSelect;

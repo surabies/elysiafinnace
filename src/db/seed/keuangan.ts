@@ -3,12 +3,17 @@ import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import {
   DAFTAR_IZIN,
   SALDO_NORMAL_BAWAAN,
+  assetCategories,
+  branches,
   chartOfAccounts,
+  companies,
   currencies,
+  departments,
   paymentTerms,
   productCategories,
   rolePermissions,
   roles,
+  taxes,
   unitsOfMeasurement,
   type KategoriArusKas,
   type PeranSistem,
@@ -16,7 +21,7 @@ import {
   type TipeAkun,
 } from "../schema/keuangan";
 
-type Db = PgDatabase<PgQueryResultHKT, any>;
+type Db = PgDatabase<PgQueryResultHKT, Record<string, unknown>>;
 
 /**
  * Seed data dasar modul keuangan (Phase 1). Aman dijalankan berulang kali:
@@ -77,6 +82,8 @@ const DAFTAR_AKUN: DefinisiAkun[] = [
   { kode: "1120", nama: "Piutang Usaha", tipe: "ASET", induk: "1100", peran: "PIUTANG_USAHA" },
   { kode: "1130", nama: "Persediaan Barang Dagang", tipe: "ASET", induk: "1100", peran: "PERSEDIAAN" },
   { kode: "1140", nama: "PPN Masukan", tipe: "ASET", induk: "1100", peran: "PPN_MASUKAN" },
+  { kode: "1150", nama: "Uang Muka Pembelian", tipe: "ASET", induk: "1100", peran: "UANG_MUKA_PEMASOK" },
+  { kode: "1160", nama: "Pajak Dibayar Dimuka (PPh)", tipe: "ASET", induk: "1100", peran: "PAJAK_DIBAYAR_DIMUKA" },
   { kode: "1200", nama: "Aset Tetap", tipe: "ASET", induk: "1000", header: true },
   { kode: "1210", nama: "Peralatan", tipe: "ASET", induk: "1200", arusKas: "INVESTASI" },
   { kode: "1219", nama: "Akumulasi Penyusutan Peralatan", tipe: "ASET", induk: "1200", kontra: true, arusKas: "INVESTASI" },
@@ -86,6 +93,8 @@ const DAFTAR_AKUN: DefinisiAkun[] = [
   { kode: "2110", nama: "Hutang Usaha", tipe: "KEWAJIBAN", induk: "2100", peran: "HUTANG_USAHA" },
   { kode: "2120", nama: "PPN Keluaran", tipe: "KEWAJIBAN", induk: "2100", peran: "PPN_KELUARAN" },
   { kode: "2130", nama: "Hutang Gaji", tipe: "KEWAJIBAN", induk: "2100" },
+  { kode: "2140", nama: "Uang Muka Penjualan", tipe: "KEWAJIBAN", induk: "2100", peran: "UANG_MUKA_PELANGGAN" },
+  { kode: "2150", nama: "Hutang Pajak (PPh)", tipe: "KEWAJIBAN", induk: "2100", peran: "HUTANG_PAJAK" },
   { kode: "2200", nama: "Kewajiban Jangka Panjang", tipe: "KEWAJIBAN", induk: "2000", header: true },
   { kode: "2210", nama: "Hutang Bank Jangka Panjang", tipe: "KEWAJIBAN", induk: "2200", arusKas: "PENDANAAN" },
   // EKUITAS
@@ -98,6 +107,7 @@ const DAFTAR_AKUN: DefinisiAkun[] = [
   { kode: "4200", nama: "Retur dan Potongan Penjualan", tipe: "PENDAPATAN", induk: "4000", kontra: true },
   { kode: "4900", nama: "Pendapatan Lain-lain", tipe: "PENDAPATAN", induk: "4000", header: true },
   { kode: "4910", nama: "Laba Selisih Kurs", tipe: "PENDAPATAN", induk: "4900", peran: "LABA_SELISIH_KURS" },
+  { kode: "4920", nama: "Laba Pelepasan Aset Tetap", tipe: "PENDAPATAN", induk: "4900" },
   // BEBAN
   { kode: "5000", nama: "HARGA POKOK PENJUALAN", tipe: "BEBAN", header: true },
   { kode: "5100", nama: "Harga Pokok Penjualan", tipe: "BEBAN", induk: "5000", peran: "HARGA_POKOK_PENJUALAN" },
@@ -111,6 +121,7 @@ const DAFTAR_AKUN: DefinisiAkun[] = [
   { kode: "6900", nama: "Beban Operasional Lainnya", tipe: "BEBAN", induk: "6000" },
   { kode: "7000", nama: "BEBAN NON-OPERASIONAL", tipe: "BEBAN", header: true },
   { kode: "7100", nama: "Rugi Selisih Kurs", tipe: "BEBAN", induk: "7000", peran: "RUGI_SELISIH_KURS" },
+  { kode: "7110", nama: "Rugi Pelepasan Aset Tetap", tipe: "BEBAN", induk: "7000" },
   { kode: "7200", nama: "Beban Bunga dan Administrasi Bank", tipe: "BEBAN", induk: "7000" },
 ];
 
@@ -191,6 +202,13 @@ export async function jalankanSeedKeuangan(db: Db) {
         aksesPenuh: false,
         adalahSistem: true,
       },
+      {
+        kode: "AUDITOR",
+        nama: "Auditor",
+        keterangan: "Akses lihat (read-only) untuk seluruh modul keuangan dan audit log.",
+        aksesPenuh: false,
+        adalahSistem: true,
+      },
     ])
     .onConflictDoNothing();
 
@@ -207,14 +225,185 @@ export async function jalankanSeedKeuangan(db: Db) {
     "pembayaran.baca",
     "pembayaran.kelola",
   ] as const;
+  const izinAuditor = DAFTAR_IZIN.filter((izin) => izin.endsWith(".baca"));
   const barisIzin = [
     ...izinAkuntan.map((izin) => ({ peranId: idPeran.get("AKUNTAN")!, izin })),
     ...izinKasir.map((izin) => ({ peranId: idPeran.get("KASIR")!, izin })),
+    ...izinAuditor.map((izin) => ({ peranId: idPeran.get("AUDITOR")!, izin })),
   ].filter((b) => b.peranId);
   if (barisIzin.length > 0) await db.insert(rolePermissions).values(barisIzin).onConflictDoNothing();
 
+  // Seed Pajak Indonesia Bawaan
+  const akunPpnKeluaran = petaId.get("2120");
+  const akunPpnMasukan = petaId.get("1140");
+  const akunPphDibayarDimuka = petaId.get("1160");
+  const akunHutangPph = petaId.get("2150");
+
+  const DAFTAR_PAJAK = [
+    {
+      kode: "PPN11",
+      nama: "PPN 11%",
+      tipePajak: "PPN" as const,
+      kategoriPajak: "PAJAK_KELUARAN" as const,
+      persentaseTarif: "11.0000",
+      dppNilaiLain: false,
+      faktorDpp: "100.0000",
+      akunPajakPenjualanId: akunPpnKeluaran?.id,
+      akunPajakPembelianId: akunPpnMasukan?.id,
+      keterangan: "Pajak Pertambahan Nilai tarif umum UU HPP (11%)",
+    },
+    {
+      kode: "PPN12",
+      nama: "PPN 12%",
+      tipePajak: "PPN" as const,
+      kategoriPajak: "PAJAK_KELUARAN" as const,
+      persentaseTarif: "12.0000",
+      dppNilaiLain: false,
+      faktorDpp: "100.0000",
+      akunPajakPenjualanId: akunPpnKeluaran?.id,
+      akunPajakPembelianId: akunPpnMasukan?.id,
+      keterangan: "Pajak Pertambahan Nilai UU HPP (12%)",
+    },
+    {
+      kode: "PPH23-JASA",
+      nama: "PPh 23 - Jasa (2%)",
+      tipePajak: "PPH_23" as const,
+      kategoriPajak: "PEMOTONGAN_PEMUNGUTAN" as const,
+      persentaseTarif: "2.0000",
+      dppNilaiLain: false,
+      faktorDpp: "100.0000",
+      akunPajakPenjualanId: akunPphDibayarDimuka?.id,
+      akunPajakPembelianId: akunHutangPph?.id,
+      keterangan: "PPh Pasal 23 atas Jasa Teknik/Manajemen/Konsultan",
+    },
+    {
+      kode: "PPH42-SEWA",
+      nama: "PPh 4(2) - Sewa Tanah/Bangunan (10%)",
+      tipePajak: "PPH_4_AYAT_2" as const,
+      kategoriPajak: "PEMOTONGAN_PEMUNGUTAN" as const,
+      persentaseTarif: "10.0000",
+      dppNilaiLain: false,
+      faktorDpp: "100.0000",
+      akunPajakPenjualanId: akunPphDibayarDimuka?.id,
+      akunPajakPembelianId: akunHutangPph?.id,
+      keterangan: "PPh Pasal 4 ayat (2) Final atas Sewa Tanah/Bangunan",
+    },
+  ];
+
+  for (const p of DAFTAR_PAJAK) {
+    await db
+      .insert(taxes)
+      .values(p)
+      .onConflictDoNothing({ target: taxes.kode });
+  }
+
+  // Seed Kategori Aset Tetap Bawaan
+  const akunPeralatan = petaId.get("1210");
+  const akunAkumPenyusutan = petaId.get("1219");
+  const akunBebanPenyusutan = petaId.get("6600");
+
+  if (akunPeralatan && akunAkumPenyusutan && akunBebanPenyusutan) {
+    const DAFTAR_KATEGORI_ASET = [
+      {
+        kode: "KAT-PERALATAN",
+        nama: "Peralatan Kantor & Komputer (Golongan 1)",
+        metodePenyusutan: "GARIS_LURUS" as const,
+        golonganFiskal: "GOLONGAN_1" as const,
+        masaManfaatBulan: 48,
+        tarifTahunanPersen: "25.0000",
+        akunAsetId: akunPeralatan.id,
+        akunAkumulasiPenyusutanId: akunAkumPenyusutan.id,
+        akunBebanPenyusutanId: akunBebanPenyusutan.id,
+        keterangan: "Aset tetap bukan bangunan kelompok 1 fiskal (masa manfaat 4 tahun)",
+      },
+      {
+        kode: "KAT-KENDARAAN",
+        nama: "Kendaraan Operasional (Golongan 2)",
+        metodePenyusutan: "GARIS_LURUS" as const,
+        golonganFiskal: "GOLONGAN_2" as const,
+        masaManfaatBulan: 96,
+        tarifTahunanPersen: "12.5000",
+        akunAsetId: akunPeralatan.id,
+        akunAkumulasiPenyusutanId: akunAkumPenyusutan.id,
+        akunBebanPenyusutanId: akunBebanPenyusutan.id,
+        keterangan: "Aset tetap bukan bangunan kelompok 2 fiskal (masa manfaat 8 tahun)",
+      },
+    ];
+
+    for (const k of DAFTAR_KATEGORI_ASET) {
+      await db
+        .insert(assetCategories)
+        .values(k)
+        .onConflictDoNothing({ target: assetCategories.kode });
+    }
+  }
+
+  // Seed Cabang Bawaan (Head Office & Branch)
+  const DAFTAR_CABANG = [
+    {
+      kode: "HO",
+      nama: "Kantor Pusat Jakarta",
+      alamat: "Jl. Jendral Sudirman Kav. 52-53, Jakarta Selatan",
+      telepon: "021-5150000",
+      penanggungJawab: "Direktur Utama",
+      pusat: true,
+      aktif: true,
+    },
+    {
+      kode: "SBY",
+      nama: "Kantor Cabang Surabaya",
+      alamat: "Jl. Basuki Rahmat No. 100, Surabaya",
+      telepon: "031-5310000",
+      penanggungJawab: "Kepala Cabang Surabaya",
+      pusat: false,
+      aktif: true,
+    },
+  ];
+
+  for (const c of DAFTAR_CABANG) {
+    await db
+      .insert(branches)
+      .values(c)
+      .onConflictDoNothing({ target: branches.kode });
+  }
+
+  // Seed Departemen Bawaan
+  const DAFTAR_DEPARTEMEN = [
+    { kode: "DIR", nama: "Direksi & Manajemen", manajer: "Direktur Utama", aktif: true },
+    { kode: "FIN", nama: "Keuangan & Akuntansi", manajer: "Finance Manager", aktif: true },
+    { kode: "IT", nama: "Teknologi Informasi", manajer: "Head of IT", aktif: true },
+    { kode: "OPS", nama: "Operasional & Logistik", manajer: "Operations Manager", aktif: true },
+  ];
+
+  for (const d of DAFTAR_DEPARTEMEN) {
+    await db
+      .insert(departments)
+      .values(d)
+      .onConflictDoNothing({ target: departments.kode });
+  }
+
+  // Seed Perusahaan Holding Bawaan
+  const muIdr = await db.select().from(currencies).where(eq(currencies.kode, "IDR")).limit(1);
+  if (muIdr.length > 0) {
+    await db
+      .insert(companies)
+      .values({
+        kode: "PT-ELYSIA",
+        nama: "PT Elysia Finance Indonesia",
+        npwp: "01.123.456.7-012.000",
+        alamat: "Jl. Jendral Sudirman Kav. 52-53, Jakarta Selatan",
+        telepon: "021-5150000",
+        email: "corporate@elysiafinance.co.id",
+        mataUangDasarId: muIdr[0]!.id,
+        adalahHolding: true,
+        aktif: true,
+      })
+      .onConflictDoNothing({ target: companies.kode });
+  }
+
   console.log(
     `[seed keuangan] Selesai: ${DAFTAR_MATA_UANG.length} mata uang, ${DAFTAR_AKUN.length} akun COA, ` +
-      `${DAFTAR_TERMIN.length} termin, ${DAFTAR_SATUAN.length} satuan, ${DAFTAR_KATEGORI.length} kategori.`,
+      `${DAFTAR_TERMIN.length} termin, ${DAFTAR_SATUAN.length} satuan, ${DAFTAR_KATEGORI.length} kategori, ${DAFTAR_PAJAK.length} pajak, ` +
+      `${DAFTAR_CABANG.length} cabang, ${DAFTAR_DEPARTEMEN.length} departemen, 1 perusahaan.`,
   );
 }

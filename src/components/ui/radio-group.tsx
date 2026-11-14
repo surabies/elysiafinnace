@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { cn } from "cn"
-import { CircleIcon } from "lucide-react"
+import { IconCircleFilled as CircleIcon } from "@tabler/icons-react"
 import { RadioGroup as RadioGroupPrimitive } from "radix-ui"
 
 function RadioGroup({

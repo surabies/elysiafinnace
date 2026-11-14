@@ -10,3 +10,14 @@ export * from "./periode";
 export * from "./jurnal";
 export * from "./transaksi";
 export * from "./dagang";
+export * from "./revaluasi";
+export * from "./lampiran";
+export * from "./recurring";
+export * from "./pajak";
+export * from "./aset-tetap";
+export * from "./dimensi";
+export * from "./anggaran";
+export * from "./kontrol";
+export * from "./otomasi";
+export * from "./produksi";
+

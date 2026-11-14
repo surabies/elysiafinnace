@@ -11,7 +11,13 @@ import {
   skemaSimpanKurs,
   skemaUbahMataUang,
 } from "./model";
+import {
+  skemaEksekusiRevaluasi,
+  skemaPreviewRevaluasi,
+  skemaQueryRevaluasi,
+} from "./revaluasi.model";
 import * as layanan from "./service";
+import * as layananRevaluasi from "./revaluasi.service";
 
 const parameterId = t.Object({ id: skema.uuid("id") });
 
@@ -61,3 +67,34 @@ export const rutaKurs = new Elysia({ prefix: "/kurs", name: "keuangan.kurs" })
   .put("/", async ({ body, sesi }) => ok(await layanan.simpanKurs(body, sesi.penggunaId)), {
     body: skemaSimpanKurs,
   });
+
+export const rutaRevaluasiKurs = new Elysia({ prefix: "/revaluasi-kurs", name: "keuangan.revaluasi-kurs" })
+  .use(dasarKeuangan)
+  .onBeforeHandle(izinPerMetode("master_data"))
+  .get(
+    "/",
+    async ({ query }) => {
+      const { halaman, ukuran, offset } = bacaHalaman(query);
+      const { data, total } = await layananRevaluasi.daftarRevaluasi({
+        dari: query.dari,
+        sampai: query.sampai,
+        offset,
+        ukuran,
+      });
+      return ok(data, { halaman, ukuran, total });
+    },
+    { query: skemaQueryRevaluasi },
+  )
+  .get("/:id", async ({ params }) => ok(await layananRevaluasi.ambilRevaluasi(params.id)), { params: parameterId })
+  .post("/preview", async ({ body }) => ok(await layananRevaluasi.hitungRevaluasi(body)), {
+    body: skemaPreviewRevaluasi,
+  })
+  .post(
+    "/",
+    async ({ body, sesi, set }) => {
+      const hasil = await layananRevaluasi.eksekusiRevaluasi(body, sesi.penggunaId);
+      set.status = 201;
+      return ok(hasil);
+    },
+    { body: skemaEksekusiRevaluasi },
+  );

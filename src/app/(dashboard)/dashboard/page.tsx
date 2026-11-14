@@ -1,15 +1,12 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Reveal } from "@/app/(dashboard)/dashboard/_components/reveal";
-import { formatDate } from "@/lib/format";
 import { requireSession } from "@/lib/session";
-import { ActionList } from "./_components/action-list";
 import { CashflowChart } from "./_components/cashflow-chart";
-import { EquationCard } from "./_components/equation-card";
+import { CashBalanceChart } from "./_components/cash-balance-chart";
 import { KpiStrip } from "./_components/kpi-strip";
-import { PageHeader } from "./_components/page-header";
-import { QuickAccess } from "./_components/quick-access";
-import { getDashboardSummary } from "../dashboard/_components/get-dashboard-summary";
+import { getDashboardSummary } from "./_components/get-dashboard-summary";
+import { RecentJournals } from "./_components/recent-journals";
 
 export const metadata: Metadata = { title: "Dashboard keuangan" };
 
@@ -27,60 +24,62 @@ export default function DashboardPage() {
 
 function DashboardSkeleton() {
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 md:px-6 md:py-8">
-      <div className="h-16 animate-pulse rounded-lg bg-muted" />
-      <div className="h-32 animate-pulse rounded-lg bg-muted" />
+    <div className="flex w-full min-w-0 flex-col gap-6">
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }, (_, i) => (
-          <div key={i} className="h-28 animate-pulse rounded-lg bg-muted" />
+          <div key={i} className="h-45 animate-pulse rounded-xl bg-muted" />
         ))}
       </div>
-      <div className="h-80 animate-pulse rounded-lg bg-muted" />
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
+        <div className="flex min-w-0 flex-col gap-6">
+          <div className="h-90 animate-pulse rounded-md bg-muted" />
+          <div className="h-75 animate-pulse rounded-md bg-muted" />
+        </div>
+        <div className="hidden h-90 animate-pulse rounded-md bg-muted xl:block" />
+      </div>
     </div>
   );
 }
 
 async function DashboardContent() {
-  const { user } = await requireSession();
+  await requireSession();
   const summary = await getDashboardSummary();
+  const cashKpi = summary.kpis.find((kpi) => kpi.id === "kas");
+  if (!cashKpi) {
+    throw new Error("Tren saldo kas tidak tersedia di ringkasan dashboard.");
+  }
 
   // <div>, bukan <main>: SidebarInset di layout sudah merender <main>
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 md:px-6 md:py-8">
-      <Reveal index={0}>
-        <PageHeader
-          name={user.name}
-          periodLabel={summary.periodLabel}
-          updatedAt={summary.updatedAt}
-          isSample={summary.source === "sample"}
-        />
-      </Reveal>
+    <div className="flex w-full min-w-0 flex-col gap-6">
+      <KpiStrip kpis={summary.kpis} comparisonLabel={summary.comparisonLabel} />
 
-      <Reveal index={1}>
-        <EquationCard
-          position={summary.position}
-          asOfLabel={formatDate(summary.updatedAt)}
-        />
-      </Reveal>
-
-      <KpiStrip
-        kpis={summary.kpis}
-        comparisonLabel={summary.comparisonLabel}
-        startIndex={2}
-      />
-
-      <div className="grid gap-4 xl:grid-cols-3">
-        <Reveal index={6} className="xl:col-span-2">
-          <CashflowChart data={summary.monthly} />
-        </Reveal>
-        <Reveal index={7}>
-          <ActionList tasks={summary.tasks} />
-        </Reveal>
+      <div
+        className={
+          summary.journalActivity
+            ? "grid w-full min-w-0 gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]"
+            : "w-full min-w-0"
+        }
+      >
+        <div className="flex min-w-0 flex-col gap-6">
+          <Reveal index={4}>
+            <CashflowChart
+              data={summary.trend}
+              hourlyData={summary.hourlyTrend}
+              asOfDate={summary.asOfDate}
+              isSample={summary.source === "sample"}
+            />
+          </Reveal>
+          <Reveal index={5}>
+            <CashBalanceChart trend={cashKpi.trend} />
+          </Reveal>
+        </div>
+        {summary.journalActivity && (
+          <Reveal index={6}>
+            <RecentJournals activity={summary.journalActivity} />
+          </Reveal>
+        )}
       </div>
-
-      <Reveal index={8}>
-        <QuickAccess />
-      </Reveal>
     </div>
   );
 }

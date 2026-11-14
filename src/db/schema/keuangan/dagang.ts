@@ -8,18 +8,19 @@ import {
   smallint,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
 import { kolomAudit, kolomId, kolomWaktu, kuantitas, persen, uang } from "./_helper";
 import { chartOfAccounts } from "./akun";
 import { bankAccounts } from "./bank";
-import { items } from "./inventori";
+import { items, warehouses } from "./inventori";
 import { journalEntries } from "./jurnal";
 import { JENIS_MUTASI_STOK, JENIS_PEMBAYARAN, STATUS_PESANAN } from "./konstanta";
 import { partners, paymentTerms } from "./kontak";
 import { kolomMataUangTransaksi } from "./mata-uang";
-import { expenses, kolomDokumen } from "./transaksi";
+import { expenses, kolomDokumen, statusDokumenEnum } from "./transaksi";
 
 export const jenisMutasiStokEnum = pgEnum("jenis_mutasi_stok", JENIS_MUTASI_STOK);
 export const statusPesananEnum = pgEnum("status_pesanan", STATUS_PESANAN);
@@ -29,19 +30,27 @@ export const jenisPembayaranEnum = pgEnum("jenis_pembayaran", JENIS_PEMBAYARAN);
 /* Persediaan (metode biaya rata-rata / Average Cost)                   */
 /* ------------------------------------------------------------------ */
 
-/** Saldo stok berjalan per item (dikunci FOR UPDATE saat mutasi). Nilai dalam mata uang dasar. */
+/** Saldo stok berjalan per item per gudang (dikunci FOR UPDATE saat mutasi). Nilai dalam mata uang dasar. */
 export const itemStocks = pgTable(
   "item_stocks",
   {
+    id: kolomId(),
     itemId: uuid("item_id")
-      .primaryKey()
+      .notNull()
       .references(() => items.id, { onDelete: "restrict" }),
+    gudangId: uuid("gudang_id")
+      .notNull()
+      .references(() => warehouses.id, { onDelete: "restrict" }),
     kuantitas: kuantitas("kuantitas").notNull().default("0"),
     nilai: uang("nilai").notNull().default("0"),
     biayaRataRata: uang("biaya_rata_rata").notNull().default("0"),
     diubahPada: kolomWaktu.diubahPada,
   },
-  (t) => [check("ck_item_stocks_tidak_negatif", sql`${t.kuantitas} >= 0 AND ${t.nilai} >= 0`)],
+  (t) => [
+    uniqueIndex("uq_item_stocks_item_gudang").on(t.itemId, t.gudangId),
+    index("idx_item_stocks_gudang").on(t.gudangId),
+    check("ck_item_stocks_tidak_negatif", sql`${t.kuantitas} >= 0 AND ${t.nilai} >= 0`),
+  ],
 );
 
 /** Kartu stok: setiap mutasi masuk/keluar beserta saldo setelah mutasi. */
@@ -53,6 +62,7 @@ export const stockMovements = pgTable(
     itemId: uuid("item_id")
       .notNull()
       .references(() => items.id, { onDelete: "restrict" }),
+    gudangId: uuid("gudang_id").references(() => warehouses.id, { onDelete: "restrict" }),
     jenis: jenisMutasiStokEnum("jenis").notNull(),
     kuantitas: kuantitas("kuantitas").notNull(),
     biayaSatuan: uang("biaya_satuan").notNull(),
@@ -60,7 +70,7 @@ export const stockMovements = pgTable(
     saldoKuantitas: kuantitas("saldo_kuantitas").notNull(),
     saldoNilai: uang("saldo_nilai").notNull(),
     biayaRataRata: uang("biaya_rata_rata").notNull(),
-    /** Jenis dokumen sumber: FAKTUR_PEMBELIAN, FAKTUR_PENJUALAN, PENYESUAIAN_STOK, ... */
+    /** Jenis dokumen sumber: FAKTUR_PEMBELIAN, FAKTUR_PENJUALAN, PENYESUAIAN_STOK, TRANSFER_GUDANG, ... */
     sumber: varchar("sumber", { length: 30 }).notNull(),
     sumberId: uuid("sumber_id").notNull(),
     keterangan: text("keterangan"),
@@ -70,36 +80,69 @@ export const stockMovements = pgTable(
   },
   (t) => [
     index("idx_stock_movements_item").on(t.itemId, t.tanggal),
+    index("idx_stock_movements_gudang").on(t.gudangId),
     index("idx_stock_movements_sumber").on(t.sumber, t.sumberId),
     check("ck_stock_movements_kuantitas_positif", sql`${t.kuantitas} > 0`),
   ],
 );
 
-/** Penyesuaian stok (stock opname): selisih positif menambah, negatif mengurangi stok. */
+/** Penyesuaian stok (stock opname / adjustment): selisih fisik vs tercatat per gudang. */
 export const stockAdjustments = pgTable(
   "stock_adjustments",
   {
     id: kolomId(),
     nomor: varchar("nomor", { length: 30 }).notNull().unique(),
     tanggal: date("tanggal", { mode: "string" }).notNull(),
-    itemId: uuid("item_id")
+    gudangId: uuid("gudang_id")
       .notNull()
-      .references(() => items.id, { onDelete: "restrict" }),
-    /** Bertanda: + menambah stok, - mengurangi stok. */
-    kuantitasSelisih: kuantitas("kuantitas_selisih").notNull(),
-    /** Biaya satuan untuk penambahan stok (mata uang dasar). Diabaikan untuk pengurangan (memakai rata-rata). */
-    biayaSatuan: uang("biaya_satuan"),
-    nilai: uang("nilai").notNull().default("0"),
+      .references(() => warehouses.id, { onDelete: "restrict" }),
     akunPenyesuaianId: uuid("akun_penyesuaian_id")
       .notNull()
       .references(() => chartOfAccounts.id, { onDelete: "restrict" }),
+    status: statusDokumenEnum("status").notNull().default("DRAFT"),
     keterangan: text("keterangan").notNull(),
+    totalNilai: uang("total_nilai").notNull().default("0"),
     jurnalId: uuid("jurnal_id").references(() => journalEntries.id, { onDelete: "restrict" }),
+    dipostingOleh: text("diposting_oleh"),
+    dipostingPada: timestamp("diposting_pada", { withTimezone: true }),
+    dibatalkanOleh: text("dibatalkan_oleh"),
+    dibatalkanPada: timestamp("dibatalkan_pada", { withTimezone: true }),
     ...kolomAudit,
     ...kolomWaktu,
   },
-  (t) => [check("ck_stock_adjustments_tidak_nol", sql`${t.kuantitasSelisih} <> 0`)],
+  (t) => [
+    index("idx_stock_adjustments_gudang").on(t.gudangId),
+    index("idx_stock_adjustments_tanggal").on(t.tanggal),
+  ],
 );
+
+export const stockAdjustmentItems = pgTable(
+  "stock_adjustment_items",
+  {
+    id: kolomId(),
+    penyesuaianId: uuid("penyesuaian_id")
+      .notNull()
+      .references(() => stockAdjustments.id, { onDelete: "cascade" }),
+    urutan: smallint("urutan").notNull(),
+    itemId: uuid("item_id")
+      .notNull()
+      .references(() => items.id, { onDelete: "restrict" }),
+    kuantitasTercatat: kuantitas("kuantitas_tercatat").notNull().default("0"),
+    kuantitasFisik: kuantitas("kuantitas_fisik").notNull().default("0"),
+    /** Bertanda: + menambah stok, - mengurangi stok. */
+    kuantitasSelisih: kuantitas("kuantitas_selisih").notNull(),
+    biayaSatuan: uang("biaya_satuan").notNull().default("0"),
+    nilai: uang("nilai").notNull().default("0"),
+    keterangan: text("keterangan"),
+  },
+  (t) => [
+    index("idx_stock_adjustment_items_penyesuaian").on(t.penyesuaianId),
+    check("ck_stock_adjustment_items_tidak_nol", sql`${t.kuantitasSelisih} <> 0`),
+  ],
+);
+
+export type PenyesuaianStok = typeof stockAdjustments.$inferSelect;
+export type BarisPenyesuaianStok = typeof stockAdjustmentItems.$inferSelect;
 
 /* ------------------------------------------------------------------ */
 /* Kolom bersama dokumen dagang                                          */
@@ -109,6 +152,7 @@ const kolomBarisDagang = () => ({
   id: kolomId(),
   urutan: smallint("urutan").notNull(),
   itemId: uuid("item_id").references(() => items.id, { onDelete: "restrict" }),
+  gudangId: uuid("gudang_id").references(() => warehouses.id, { onDelete: "restrict" }),
   /** Akun untuk baris tanpa item persediaan (beban/aset untuk pembelian, pendapatan untuk penjualan). */
   akunId: uuid("akun_id").references(() => chartOfAccounts.id, { onDelete: "restrict" }),
   deskripsi: text("deskripsi"),
@@ -119,7 +163,7 @@ const kolomBarisDagang = () => ({
   subtotal: uang("subtotal").notNull(),
 });
 
-const ckBarisDagang = (nama: string, t: { kuantitas: any; hargaSatuan: any; itemId: any; akunId: any }) => [
+const ckBarisDagang = (nama: string, t: { kuantitas: unknown; hargaSatuan: unknown; itemId: unknown; akunId: unknown }) => [
   check(`ck_${nama}_kuantitas_positif`, sql`${t.kuantitas} > 0 AND ${t.hargaSatuan} >= 0`),
   check(`ck_${nama}_item_atau_akun`, sql`${t.itemId} IS NOT NULL OR ${t.akunId} IS NOT NULL`),
 ];
@@ -149,6 +193,11 @@ export const purchaseOrders = pgTable(
     catatan: text("catatan"),
     ...kolomMataUangTransaksi(),
     ...kolomTotalDagang(),
+    diskonNominal: uang("diskon_nominal").notNull().default("0"),
+    ongkir: uang("ongkir").notNull().default("0"),
+    uangMuka: uang("uang_muka").notNull().default("0"),
+    akunUangMukaId: uuid("akun_uang_muka_id").references(() => chartOfAccounts.id, { onDelete: "restrict" }),
+    akunOngkirId: uuid("akun_ongkir_id").references(() => chartOfAccounts.id, { onDelete: "restrict" }),
     status: statusPesananEnum("status").notNull().default("DRAFT"),
     disetujuiOleh: text("disetujui_oleh"),
     disetujuiPada: timestamp("disetujui_pada", { withTimezone: true }),
@@ -196,6 +245,11 @@ export const purchaseInvoices = pgTable(
     catatan: text("catatan"),
     ...kolomMataUangTransaksi(),
     ...kolomTotalDagang(),
+    diskonNominal: uang("diskon_nominal").notNull().default("0"),
+    ongkir: uang("ongkir").notNull().default("0"),
+    uangMuka: uang("uang_muka").notNull().default("0"),
+    akunUangMukaId: uuid("akun_uang_muka_id").references(() => chartOfAccounts.id, { onDelete: "restrict" }),
+    akunOngkirId: uuid("akun_ongkir_id").references(() => chartOfAccounts.id, { onDelete: "restrict" }),
     sisaTagihan: uang("sisa_tagihan").notNull().default("0"),
     ...kolomDokumen(),
     ...kolomAudit,
@@ -220,6 +274,50 @@ export const purchaseInvoiceItems = pgTable(
   (t) => [index("idx_purchase_invoice_items_faktur").on(t.fakturId), ...ckBarisDagang("purchase_invoice_items", t)],
 );
 
+/**
+ * Retur Pembelian (Debit Note). Posting menjurnal:
+ *   (Dr) Hutang Usaha
+ *   (Cr) Persediaan / Beban  + (Cr) PPN Masukan
+ * dan mencatat stok keluar (Average Cost).
+ */
+export const purchaseReturns = pgTable(
+  "purchase_returns",
+  {
+    id: kolomId(),
+    nomor: varchar("nomor", { length: 30 }).notNull().unique(),
+    tanggal: date("tanggal", { mode: "string" }).notNull(),
+    pemasokId: uuid("pemasok_id")
+      .notNull()
+      .references(() => partners.id, { onDelete: "restrict" }),
+    fakturId: uuid("faktur_id")
+      .notNull()
+      .references(() => purchaseInvoices.id, { onDelete: "restrict" }),
+    catatan: text("catatan"),
+    ...kolomMataUangTransaksi(),
+    ...kolomTotalDagang(),
+    diskonNominal: uang("diskon_nominal").notNull().default("0"),
+    ...kolomDokumen(),
+    ...kolomAudit,
+    ...kolomWaktu,
+  },
+  (t) => [
+    index("idx_purchase_returns_pemasok").on(t.pemasokId),
+    index("idx_purchase_returns_faktur").on(t.fakturId),
+  ],
+);
+
+export const purchaseReturnItems = pgTable(
+  "purchase_return_items",
+  {
+    ...kolomBarisDagang(),
+    returId: uuid("retur_id")
+      .notNull()
+      .references(() => purchaseReturns.id, { onDelete: "cascade" }),
+    barisFakturId: uuid("baris_faktur_id").references(() => purchaseInvoiceItems.id, { onDelete: "restrict" }),
+  },
+  (t) => [index("idx_purchase_return_items_retur").on(t.returId), ...ckBarisDagang("purchase_return_items", t)],
+);
+
 /* ------------------------------------------------------------------ */
 /* Penjualan (Accounts Receivable)                                       */
 /* ------------------------------------------------------------------ */
@@ -238,6 +336,11 @@ export const salesOrders = pgTable(
     catatan: text("catatan"),
     ...kolomMataUangTransaksi(),
     ...kolomTotalDagang(),
+    diskonNominal: uang("diskon_nominal").notNull().default("0"),
+    ongkir: uang("ongkir").notNull().default("0"),
+    uangMuka: uang("uang_muka").notNull().default("0"),
+    akunUangMukaId: uuid("akun_uang_muka_id").references(() => chartOfAccounts.id, { onDelete: "restrict" }),
+    akunOngkirId: uuid("akun_ongkir_id").references(() => chartOfAccounts.id, { onDelete: "restrict" }),
     status: statusPesananEnum("status").notNull().default("DRAFT"),
     disetujuiOleh: text("disetujui_oleh"),
     disetujuiPada: timestamp("disetujui_pada", { withTimezone: true }),
@@ -283,6 +386,11 @@ export const salesInvoices = pgTable(
     catatan: text("catatan"),
     ...kolomMataUangTransaksi(),
     ...kolomTotalDagang(),
+    diskonNominal: uang("diskon_nominal").notNull().default("0"),
+    ongkir: uang("ongkir").notNull().default("0"),
+    uangMuka: uang("uang_muka").notNull().default("0"),
+    akunUangMukaId: uuid("akun_uang_muka_id").references(() => chartOfAccounts.id, { onDelete: "restrict" }),
+    akunOngkirId: uuid("akun_ongkir_id").references(() => chartOfAccounts.id, { onDelete: "restrict" }),
     /** Total HPP (mata uang dasar) saat diposting. */
     totalHpp: uang("total_hpp").notNull().default("0"),
     sisaTagihan: uang("sisa_tagihan").notNull().default("0"),
@@ -309,6 +417,55 @@ export const salesInvoiceItems = pgTable(
     hpp: uang("hpp").notNull().default("0"),
   },
   (t) => [index("idx_sales_invoice_items_faktur").on(t.fakturId), ...ckBarisDagang("sales_invoice_items", t)],
+);
+
+/**
+ * Retur Penjualan (Credit Note). Posting menjurnal:
+ *   (Dr) Pendapatan Penjualan + (Dr) PPN Keluaran
+ *   (Cr) Piutang Usaha
+ * dan
+ *   (Dr) Persediaan
+ *   (Cr) Harga Pokok Penjualan
+ * serta mencatat stok masuk (Average Cost).
+ */
+export const salesReturns = pgTable(
+  "sales_returns",
+  {
+    id: kolomId(),
+    nomor: varchar("nomor", { length: 30 }).notNull().unique(),
+    tanggal: date("tanggal", { mode: "string" }).notNull(),
+    pelangganId: uuid("pelanggan_id")
+      .notNull()
+      .references(() => partners.id, { onDelete: "restrict" }),
+    fakturId: uuid("faktur_id")
+      .notNull()
+      .references(() => salesInvoices.id, { onDelete: "restrict" }),
+    catatan: text("catatan"),
+    ...kolomMataUangTransaksi(),
+    ...kolomTotalDagang(),
+    diskonNominal: uang("diskon_nominal").notNull().default("0"),
+    totalHpp: uang("total_hpp").notNull().default("0"),
+    ...kolomDokumen(),
+    ...kolomAudit,
+    ...kolomWaktu,
+  },
+  (t) => [
+    index("idx_sales_returns_pelanggan").on(t.pelangganId),
+    index("idx_sales_returns_faktur").on(t.fakturId),
+  ],
+);
+
+export const salesReturnItems = pgTable(
+  "sales_return_items",
+  {
+    ...kolomBarisDagang(),
+    returId: uuid("retur_id")
+      .notNull()
+      .references(() => salesReturns.id, { onDelete: "cascade" }),
+    barisFakturId: uuid("baris_faktur_id").references(() => salesInvoiceItems.id, { onDelete: "restrict" }),
+    hpp: uang("hpp").notNull().default("0"),
+  },
+  (t) => [index("idx_sales_return_items_retur").on(t.returId), ...ckBarisDagang("sales_return_items", t)],
 );
 
 /* ------------------------------------------------------------------ */
@@ -360,6 +517,9 @@ export const paymentAllocations = pgTable(
     fakturPembelianId: uuid("faktur_pembelian_id").references(() => purchaseInvoices.id, { onDelete: "restrict" }),
     biayaId: uuid("biaya_id").references(() => expenses.id, { onDelete: "restrict" }),
     jumlah: uang("jumlah").notNull(),
+    potongan: uang("potongan").notNull().default("0"),
+    akunPotonganId: uuid("akun_potongan_id").references(() => chartOfAccounts.id, { onDelete: "restrict" }),
+    selisihKurs: uang("selisih_kurs").notNull().default("0"),
   },
   (t) => [
     index("idx_payment_allocations_pembayaran").on(t.pembayaranId),
@@ -373,6 +533,19 @@ export const paymentAllocations = pgTable(
   ],
 );
 
+export type PesananPembelian = typeof purchaseOrders.$inferSelect;
+export type BarisPesananPembelian = typeof purchaseOrderItems.$inferSelect;
 export type FakturPembelian = typeof purchaseInvoices.$inferSelect;
+export type BarisFakturPembelian = typeof purchaseInvoiceItems.$inferSelect;
+export type ReturPembelian = typeof purchaseReturns.$inferSelect;
+export type BarisReturPembelian = typeof purchaseReturnItems.$inferSelect;
+
+export type PesananPenjualan = typeof salesOrders.$inferSelect;
+export type BarisPesananPenjualan = typeof salesOrderItems.$inferSelect;
 export type FakturPenjualan = typeof salesInvoices.$inferSelect;
+export type BarisFakturPenjualan = typeof salesInvoiceItems.$inferSelect;
+export type ReturPenjualan = typeof salesReturns.$inferSelect;
+export type BarisReturPenjualan = typeof salesReturnItems.$inferSelect;
+
 export type Pembayaran = typeof payments.$inferSelect;
+export type AlokasiPembayaran = typeof paymentAllocations.$inferSelect;

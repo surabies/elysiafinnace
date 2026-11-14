@@ -3,7 +3,7 @@
 import * as React from "react"
 import { Combobox as ComboboxPrimitive } from "@base-ui/react"
 import { cn } from "cn"
-import { CheckIcon, ChevronDownIcon, XIcon } from "lucide-react"
+import { IconCheck as CheckIcon, IconChevronDown as ChevronDownIcon, IconX as XIcon } from "@tabler/icons-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -274,7 +274,6 @@ function ComboboxChip({
 
 function ComboboxChipsInput({
   className,
-  children,
   ...props
 }: ComboboxPrimitive.Input.Props) {
   return (

@@ -1,42 +1,46 @@
-export type FinancialPosition = {
-  aset: number;
-  kewajiban: number;
-  ekuitas: number;
-};
-
 export type Kpi = {
   id: "pendapatan" | "beban" | "laba" | "kas";
   label: string;
-  value: number;
+  value: string;
   /** Perubahan (%) dibanding periode pembanding. */
   deltaPct: number;
   /** Naik = baik? (false untuk beban) */
   positiveIsGood: boolean;
-  trend: number[];
+  trend: { period: string; value: string }[];
 };
 
-export type MonthlyPoint = {
-  month: string;
+export type FinancialTrendPoint = {
+  date: string;
   pendapatan: number;
   beban: number;
+  transactionCount: number;
 };
 
-export type PendingTask = {
-  id: string;
-  title: string;
-  count: number;
-  href: string;
-  tone: "warning" | "neutral";
+export type FinancialHourlyTrendPoint = {
+  hour: number;
+  pendapatan: number;
+  beban: number;
+  transactionCount: number;
+};
+
+export type DashboardJournalActivity = {
+  entries: {
+    id: string;
+    nomor: string;
+    tanggal: string;
+    deskripsi: string;
+    total: string;
+  }[];
+  draftCount: number;
 };
 
 export type DashboardSummary = {
-  /** "sample" = data contoh (belum tersambung API). */
+  /** Sumber data grafik utama. */
   source: "sample" | "live";
-  updatedAt: string; // ISO
-  periodLabel: string;
+  asOfDate: string;
   comparisonLabel: string;
-  position: FinancialPosition;
   kpis: Kpi[];
-  monthly: MonthlyPoint[];
-  tasks: PendingTask[];
+  trend: FinancialTrendPoint[];
+  hourlyTrend: FinancialHourlyTrendPoint[];
+  journalActivity: DashboardJournalActivity | null;
 };

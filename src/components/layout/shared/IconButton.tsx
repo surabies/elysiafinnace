@@ -1,20 +1,21 @@
 "use client";
 
-import type { ComponentProps } from "react";
-import { Icon } from "@iconify/react";
+import type { ComponentProps, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 interface IconButtonProps extends ComponentProps<"button"> {
-  icon: string;
+  icon?: ReactNode;
+  children?: ReactNode;
   /** Dipakai sebagai aria-label dan tooltip bawaan browser. */
   label: string;
-  /** Tampilan "menyala" (latar biru muda), mis. untuk sidebar trigger. */
+  /** Tampilan aktif dengan latar aksen, mis. untuk sidebar trigger. */
   active?: boolean;
 }
 
 /** Tombol ikon bulat 40px yang dipakai bersama oleh header. */
 export function IconButton({
   icon,
+  children,
   label,
   active = false,
   className,
@@ -26,15 +27,15 @@ export function IconButton({
       aria-label={label}
       title={label}
       className={cn(
-        "flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary/40",
+        "flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors",
         active
-          ? "bg-lightprimary text-primary"
-          : "text-foreground hover:bg-lightprimary hover:text-primary dark:text-muted-foreground",
+          ? "bg-accent text-accent-foreground"
+          : "text-foreground hover:bg-accent hover:text-accent-foreground",
         className,
       )}
       {...props}
     >
-      <Icon icon={icon} width={20} height={20} />
+      {icon ?? children}
     </button>
   );
 }

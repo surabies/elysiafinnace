@@ -1,6 +1,17 @@
+import type { ComponentType } from "react";
+import type { IconProps } from "@tabler/icons-react";
+import {
+  IconBuildingBank,
+  IconBuildingSkyscraper,
+  IconFileReport,
+  IconNotebook,
+  IconPackages,
+  IconReceipt2,
+  IconShoppingBag,
+  IconShoppingCart,
+} from "@tabler/icons-react";
 import { ROUTES } from "../sidebar/routes";
 
-/** Warna ikon di mega menu. Pemetaan ke class Tailwind ada di komponen MegaMenu. */
 export type MegaMenuTone =
   | "primary"
   | "secondary"
@@ -14,7 +25,7 @@ export interface MegaMenuApp {
   title: string;
   description: string;
   href: string;
-  icon: string;
+  icon: ComponentType<IconProps>;
   tone: MegaMenuTone;
 }
 
@@ -31,7 +42,7 @@ export const MEGA_MENU_APPS: MegaMenuApp[] = [
     title: "Penjualan",
     description: "Faktur & penerimaan",
     href: ROUTES.sales.invoices,
-    icon: "solar:cart-large-2-linear",
+    icon: IconShoppingCart,
     tone: "primary",
   },
   {
@@ -39,7 +50,7 @@ export const MEGA_MENU_APPS: MegaMenuApp[] = [
     title: "Pembelian",
     description: "Faktur & pembayaran",
     href: ROUTES.purchases.invoices,
-    icon: "solar:bag-5-linear",
+    icon: IconShoppingBag,
     tone: "secondary",
   },
   {
@@ -47,7 +58,7 @@ export const MEGA_MENU_APPS: MegaMenuApp[] = [
     title: "Kas & Bank",
     description: "Saldo & transfer",
     href: ROUTES.cashBank.accounts,
-    icon: "solar:wallet-linear",
+    icon: IconBuildingBank,
     tone: "success",
   },
   {
@@ -55,23 +66,23 @@ export const MEGA_MENU_APPS: MegaMenuApp[] = [
     title: "Biaya",
     description: "Catat pengeluaran",
     href: ROUTES.expenses.list,
-    icon: "solar:bill-list-linear",
+    icon: IconReceipt2,
     tone: "warning",
   },
   {
     id: "inventory",
     title: "Produk & Persediaan",
     description: "Stok & gudang",
-    href: ROUTES.products,
-    icon: "solar:box-minimalistic-linear",
+    href: ROUTES.inventory.products,
+    icon: IconPackages,
     tone: "info",
   },
   {
     id: "fixed-assets",
     title: "Aset Tetap",
     description: "Penyusutan aset",
-    href: ROUTES.fixedAssets,
-    icon: "solar:buildings-2-linear",
+    href: ROUTES.fixedAssets.list,
+    icon: IconBuildingSkyscraper,
     tone: "danger",
   },
   {
@@ -79,28 +90,28 @@ export const MEGA_MENU_APPS: MegaMenuApp[] = [
     title: "Jurnal Umum",
     description: "Entri jurnal manual",
     href: ROUTES.accounting.journals,
-    icon: "solar:notes-linear",
+    icon: IconNotebook,
     tone: "secondary",
   },
   {
     id: "reports",
     title: "Laporan Keuangan",
     description: "Neraca & laba rugi",
-    href: ROUTES.reports.balanceSheet,
-    icon: "solar:pie-chart-2-linear",
+    href: ROUTES.reports.financial,
+    icon: IconFileReport,
     tone: "primary",
   },
 ];
 
 /** Kolom kanan: pintasan ke pekerjaan yang paling sering dilakukan. */
 export const MEGA_MENU_QUICK_LINKS: MegaMenuQuickLink[] = [
-  { id: "new-invoice", label: "Buat faktur penjualan", href: ROUTES.sales.newInvoice },
-  { id: "new-expense", label: "Catat biaya", href: ROUTES.expenses.newExpense },
+  { id: "new-invoice", label: "Faktur penjualan", href: ROUTES.sales.invoices },
+  { id: "new-expense", label: "Catat biaya", href: ROUTES.expenses.list },
   { id: "receive-payment", label: "Terima pembayaran", href: ROUTES.sales.payments },
-  { id: "trial-balance", label: "Neraca saldo", href: ROUTES.reports.trialBalance },
-  { id: "ledger", label: "Buku besar", href: ROUTES.reports.generalLedger },
-  { id: "receivable", label: "Umur piutang", href: ROUTES.reports.receivableAging },
-  { id: "payable", label: "Umur utang", href: ROUTES.reports.payableAging },
+  { id: "financial-report", label: "Laporan finansial", href: ROUTES.reports.financial },
+  { id: "subledger-aging", label: "Buku besar pembantu & aging", href: ROUTES.reports.subledgerAging },
+  { id: "recurring", label: "Transaksi berulang", href: ROUTES.automation.recurring },
+  { id: "reminders", label: "Pengingat jatuh tempo", href: ROUTES.automation.reminders },
   { id: "company", label: "Profil perusahaan", href: ROUTES.settings.company },
 ];
 

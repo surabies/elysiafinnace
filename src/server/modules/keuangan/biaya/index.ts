@@ -3,9 +3,12 @@ import { dasarKeuangan, wajibIzin } from "../shared/access";
 import { ok } from "@/server/core/response";
 import { skema } from "../shared/schema";
 import { skemaBatal, skemaQueryBiaya, skemaSimpanBiaya } from "./model";
+import { skemaSimpanLampiran } from "../jurnal/lampiran.model";
 import * as layanan from "./service";
+import * as layananLampiran from "../jurnal/lampiran.service";
 
 const parameterId = t.Object({ id: skema.uuid("id") });
+const parameterLampiranId = t.Object({ lampiranId: skema.uuid("lampiranId") });
 
 export const rutaBiaya = new Elysia({ prefix: "/biaya", name: "keuangan.biaya" })
   .use(dasarKeuangan)
@@ -47,4 +50,23 @@ export const rutaBiaya = new Elysia({ prefix: "/biaya", name: "keuangan.biaya" }
       params: parameterId,
       body: skemaBatal,
     },
+  )
+  // Lampiran dokumen biaya
+  .get("/:id/lampiran", async ({ params }) => ok(await layananLampiran.daftarLampiran("BIAYA", params.id)), {
+    beforeHandle: wajibIzin("biaya.baca"),
+    params: parameterId,
+  })
+  .post(
+    "/:id/lampiran",
+    async ({ params, body, sesi, set }) => {
+      const hasil = await layananLampiran.tambahLampiran("BIAYA", params.id, body, sesi.penggunaId);
+      set.status = 201;
+      return ok(hasil);
+    },
+    { beforeHandle: wajibIzin("biaya.kelola"), params: parameterId, body: skemaSimpanLampiran },
+  )
+  .delete(
+    "/lampiran/:lampiranId",
+    async ({ params }) => ok(await layananLampiran.hapusLampiran(params.lampiranId)),
+    { beforeHandle: wajibIzin("biaya.kelola"), params: parameterLampiranId },
   );

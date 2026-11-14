@@ -1,3 +1,0 @@
-/** Gaya tombol teks di bar navigasi header (dipakai MegaMenu dan HeaderNav). */
-export const headerNavItemClass =
-  "inline-flex h-10 cursor-pointer items-center gap-1 rounded-lg px-3 text-sm font-medium text-foreground outline-none transition-colors hover:bg-lightprimary hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/40 data-[state=open]:bg-lightprimary data-[state=open]:text-primary dark:text-muted-foreground";

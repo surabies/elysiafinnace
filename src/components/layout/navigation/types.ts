@@ -1,16 +1,21 @@
+import type { ComponentType } from "react";
+import type { IconProps } from "@tabler/icons-react";
+
+export type NavIcon = ComponentType<IconProps>;
+
 /** Satu tautan navigasi (daun menu). */
 export interface NavLink {
   id: string;
   label: string;
   href: string;
-  icon?: string;
+  icon?: NavIcon;
 }
 
 /** Grup yang bisa di-expand. Sengaja hanya 1 level anak agar sidebar tetap ringkas. */
 export interface NavGroup {
   id: string;
   label: string;
-  icon: string;
+  icon: NavIcon;
   children: NavLink[];
 }
 

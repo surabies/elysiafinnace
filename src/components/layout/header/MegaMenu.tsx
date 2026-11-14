@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import Link from "next/link";
-import { Icon } from "@iconify/react";
+import { IconChevronDown, IconHelpCircle } from "@tabler/icons-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,18 +16,17 @@ import {
   MEGA_MENU_QUICK_LINKS,
   type MegaMenuTone,
 } from "../navigation/mega-menu";
-import { headerNavItemClass } from "../types/nav-styles";
+import { headerNavItemClass } from "../types/styles";
 import { useHoverMenu } from "../types/use-hover-menu";
 
 const TONE_CLASS: Record<MegaMenuTone, string> = {
-  primary: "bg-primary/10 text-primary",
-  secondary: "bg-secondary/10 text-secondary",
-  success: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-  warning: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  danger: "bg-rose-500/10 text-rose-600 dark:text-rose-400",
-  info: "bg-sky-500/10 text-sky-600 dark:text-sky-400",
+  primary: "bg-accent text-accent-foreground",
+  secondary: "bg-muted text-muted-foreground",
+  success: "bg-lightsuccess text-successemphasis",
+  warning: "bg-lightwarning text-warningemphasis",
+  danger: "bg-lighterror text-erroremphasis",
+  info: "bg-lightinfo text-infoemphasis",
 };
-
 /*
  * Catatan: semua elemen interaktif dibungkus <DropdownMenuItem asChild> agar
  * bisa dijangkau keyboard (Radix mencegat Tab di dalam menu). Styling
@@ -39,7 +38,11 @@ export default function MegaMenu() {
   const hover = useHoverMenu();
 
   return (
-    <DropdownMenu modal={false} open={hover.open} onOpenChange={hover.onOpenChange}>
+    <DropdownMenu
+      modal={false}
+      open={hover.open}
+      onOpenChange={hover.onOpenChange}
+    >
       <DropdownMenuTrigger
         asChild
         onPointerEnter={hover.onPointerEnter}
@@ -49,12 +52,14 @@ export default function MegaMenu() {
           if (event.pointerType === "mouse") event.preventDefault();
         }}
       >
-        <button ref={triggerRef} type="button" className={cn(headerNavItemClass, "group")}>
+        <button
+          ref={triggerRef}
+          type="button"
+          className={cn(headerNavItemClass, "group")}
+        >
           Aplikasi
-          <Icon
-            icon="solar:alt-arrow-up-linear"
-            width={14}
-            height={14}
+          <IconChevronDown
+            size={14}
             className="transition-transform duration-300 ease-in-out group-data-[state=open]:rotate-180 motion-reduce:transition-none"
           />
         </button>
@@ -66,16 +71,21 @@ export default function MegaMenu() {
         onPointerEnter={hover.onPointerEnter}
         onPointerLeave={hover.onPointerLeave}
         onInteractOutside={(event) => {
-          if (triggerRef.current?.contains(event.target as Node)) event.preventDefault();
+          if (triggerRef.current?.contains(event.target as Node))
+            event.preventDefault();
         }}
-        className="w-[min(94vw,56rem)] overflow-hidden rounded-lg border border-border p-0"
+        className="w-[min(94vw,56rem)] overflow-hidden p-0"
       >
         <div className="grid md:grid-cols-[1fr_17rem]">
           {/* Kiri: modul + footer */}
           <div className="flex flex-col p-6">
             <div className="grid gap-x-6 gap-y-1 sm:grid-cols-2">
               {MEGA_MENU_APPS.map((app) => (
-                <DropdownMenuItem key={app.id} asChild className="cursor-pointer gap-4 rounded-lg p-2">
+                <DropdownMenuItem
+                  key={app.id}
+                  asChild
+                  className="cursor-pointer gap-4 rounded-lg p-2"
+                >
                   <Link href={app.href}>
                     <span
                       className={cn(
@@ -83,11 +93,13 @@ export default function MegaMenu() {
                         TONE_CLASS[app.tone],
                       )}
                     >
-                      <Icon icon={app.icon} className="size-[22px]" />
+                      <app.icon size={22} stroke={1.75} />
                     </span>
                     <span className="min-w-0">
-                      <span className="block truncate text-sm font-semibold">{app.title}</span>
-                      <span className="block truncate text-xs text-muted-foreground">
+                      <span className="block truncate text-heading-14">
+                        {app.title}
+                      </span>
+                      <span className="block truncate text-label-12 text-muted-foreground">
                         {app.description}
                       </span>
                     </span>
@@ -97,9 +109,15 @@ export default function MegaMenu() {
             </div>
 
             <div className="mt-4 flex items-center justify-between gap-4 border-t border-border pt-4">
-              <DropdownMenuItem asChild className="cursor-pointer gap-2 text-sm font-semibold">
+              <DropdownMenuItem
+                asChild
+                className="cursor-pointer gap-2 font-semibold"
+              >
                 <Link href={MEGA_MENU_FOOTER.faq.href}>
-                  <Icon icon="solar:question-circle-linear" className="size-5" />
+                  <IconHelpCircle
+                    size={20}
+                    stroke={1.75}
+                  />
                   {MEGA_MENU_FOOTER.faq.label}
                 </Link>
               </DropdownMenuItem>
@@ -108,20 +126,22 @@ export default function MegaMenu() {
                 asChild
                 className="cursor-pointer bg-primary px-4 py-2 text-primary-foreground focus:bg-primary/90 focus:text-primary-foreground"
               >
-                <Link href={MEGA_MENU_FOOTER.cta.href}>{MEGA_MENU_FOOTER.cta.label}</Link>
+                <Link href={MEGA_MENU_FOOTER.cta.href}>
+                  {MEGA_MENU_FOOTER.cta.label}
+                </Link>
               </DropdownMenuItem>
             </div>
           </div>
 
           {/* Kanan: pintasan */}
           <div className="border-t border-border p-6 md:border-s md:border-t-0">
-            <h3 className="mb-3 px-2 text-lg font-semibold">Pintasan</h3>
+            <h3 className="mb-3 px-2 text-heading-20">Pintasan</h3>
             <div className="flex flex-col">
               {MEGA_MENU_QUICK_LINKS.map((link) => (
                 <DropdownMenuItem
                   key={link.id}
                   asChild
-                  className="cursor-pointer px-2 py-2 text-sm font-medium"
+                  className="cursor-pointer px-2 py-2 text-label-14 font-medium"
                 >
                   <Link href={link.href}>{link.label}</Link>
                 </DropdownMenuItem>

@@ -1,5 +1,5 @@
-import { and, eq } from "drizzle-orm";
-import { itemStocks, stockMovements } from "@/db/schema/keuangan";
+import { and, desc, eq } from "drizzle-orm";
+import { itemStocks, stockMovements, warehouses } from "@/db/schema/keuangan";
 import { bagi, keBigInt, keString, kali } from "../shared/decimal";
 import { galat } from "@/server/core/errors";
 import type { Tx } from "../shared/transaction";
@@ -9,17 +9,54 @@ export type HasilMutasiStok = {
   biayaSatuan: bigint;
   saldoKuantitas: bigint;
   biayaRataRata: bigint;
+  gudangId: string;
 };
 
-async function kunciSaldo(tx: Tx, itemId: string) {
-  await tx.insert(itemStocks).values({ itemId }).onConflictDoNothing();
-  const [stok] = await tx.select().from(itemStocks).where(eq(itemStocks.itemId, itemId)).for("update");
-  if (!stok) throw galat.aturanBisnis("Saldo stok gagal dikunci.");
+/**
+ * Mengambil Gudang Utama sistem. Jika belum ada, otomatis membuat gudang default.
+ */
+export async function ambilAtauBuatGudangUtama(tx: Tx): Promise<string> {
+  const [utama] = await tx
+    .select()
+    .from(warehouses)
+    .where(and(eq(warehouses.adalahGudangUtama, true), eq(warehouses.aktif, true)));
+  if (utama) return utama.id;
+
+  const [pertama] = await tx
+    .select()
+    .from(warehouses)
+    .where(eq(warehouses.aktif, true))
+    .orderBy(desc(warehouses.adalahGudangUtama));
+  if (pertama) return pertama.id;
+
+  const [baru] = await tx
+    .insert(warehouses)
+    .values({
+      kode: "WH-UTAMA",
+      nama: "Gudang Utama",
+      adalahGudangUtama: true,
+      aktif: true,
+      dibuatOleh: "sistem",
+      diubahOleh: "sistem",
+    })
+    .returning({ id: warehouses.id });
+  return baru!.id;
+}
+
+async function kunciSaldo(tx: Tx, itemId: string, gudangId: string) {
+  await tx.insert(itemStocks).values({ itemId, gudangId }).onConflictDoNothing();
+  const [stok] = await tx
+    .select()
+    .from(itemStocks)
+    .where(and(eq(itemStocks.itemId, itemId), eq(itemStocks.gudangId, gudangId)))
+    .for("update");
+  if (!stok) throw galat.aturanBisnis("Saldo stok gudang gagal dikunci.");
   return stok;
 }
 
 /**
- * Mutasi stok metode biaya rata-rata (Average Cost). Nilai selalu dalam mata uang dasar.
+ * Mutasi stok metode biaya rata-rata (Average Cost) per gudang.
+ * Nilai selalu dalam mata uang dasar.
  * Baris saldo dikunci FOR UPDATE agar dua mutasi bersamaan tidak saling menimpa.
  */
 export async function catatMutasiStok(
@@ -27,6 +64,7 @@ export async function catatMutasiStok(
   input: {
     tanggal: string;
     itemId: string;
+    gudangId?: string | null;
     jenis: "MASUK" | "KELUAR";
     kuantitas: string;
     /** Wajib untuk MASUK. Diabaikan untuk KELUAR (memakai biaya rata-rata berjalan). */
@@ -40,7 +78,9 @@ export async function catatMutasiStok(
 ): Promise<HasilMutasiStok> {
   const qty = keBigInt(input.kuantitas);
   if (qty <= BigInt(0)) throw galat.aturanBisnis("Kuantitas mutasi stok harus lebih dari 0.");
-  const stok = await kunciSaldo(tx, input.itemId);
+
+  const gudangId = input.gudangId ?? (await ambilAtauBuatGudangUtama(tx));
+  const stok = await kunciSaldo(tx, input.itemId, gudangId);
   const qtyLama = keBigInt(stok.kuantitas);
   const nilaiLama = keBigInt(stok.nilai);
 
@@ -58,9 +98,10 @@ export async function catatMutasiStok(
     nilaiBaru = nilaiLama + nilai;
   } else {
     if (qty > qtyLama) {
-      throw galat.aturanBisnis("Stok tidak mencukupi untuk pengeluaran barang.", {
+      throw galat.aturanBisnis("Stok tidak mencukupi untuk pengeluaran barang di gudang terkait.", {
         tersedia: keString(qtyLama),
         diminta: keString(qty),
+        gudangId,
       });
     }
     biaya = qtyLama === BigInt(0) ? BigInt(0) : bagi(nilaiLama, qtyLama);
@@ -83,10 +124,12 @@ export async function catatMutasiStok(
       biayaRataRata: keString(rata),
       diubahPada: new Date(),
     })
-    .where(eq(itemStocks.itemId, input.itemId));
+    .where(and(eq(itemStocks.itemId, input.itemId), eq(itemStocks.gudangId, gudangId)));
+
   await tx.insert(stockMovements).values({
     tanggal: input.tanggal,
     itemId: input.itemId,
+    gudangId,
     jenis: input.jenis,
     kuantitas: keString(qty),
     biayaSatuan: keString(biaya),
@@ -100,17 +143,22 @@ export async function catatMutasiStok(
     jurnalId: input.jurnalId ?? null,
     dibuatOleh: input.oleh,
   });
-  return { nilai, biayaSatuan: biaya, saldoKuantitas: qtyBaru, biayaRataRata: rata };
+
+  return { nilai, biayaSatuan: biaya, saldoKuantitas: qtyBaru, biayaRataRata: rata, gudangId };
 }
 
-/** Membalik seluruh mutasi sebuah dokumen dengan nilai asli (bukan rata-rata baru). */
+/** Membalik seluruh mutasi sebuah dokumen dengan nilai asli per gudang. */
 export async function balikMutasiDokumen(tx: Tx, sumber: string, sumberId: string, tanggal: string, oleh: string) {
   const daftar = await tx
     .select()
     .from(stockMovements)
     .where(and(eq(stockMovements.sumber, sumber), eq(stockMovements.sumberId, sumberId)));
+
+  const gudangUtamaId = await ambilAtauBuatGudangUtama(tx);
+
   for (const m of daftar) {
-    const stok = await kunciSaldo(tx, m.itemId);
+    const gudangId = m.gudangId ?? gudangUtamaId;
+    const stok = await kunciSaldo(tx, m.itemId, gudangId);
     const qty = keBigInt(m.kuantitas);
     const nilai = keBigInt(m.nilai);
     const qtyLama = keBigInt(stok.kuantitas);
@@ -118,11 +166,13 @@ export async function balikMutasiDokumen(tx: Tx, sumber: string, sumberId: strin
     const masuk = m.jenis === "MASUK";
     const qtyBaru = masuk ? qtyLama - qty : qtyLama + qty;
     const nilaiBaru = masuk ? nilaiLama - nilai : nilaiLama + nilai;
+
     if (qtyBaru < BigInt(0) || nilaiBaru < BigInt(0) || (qtyBaru === BigInt(0) && nilaiBaru !== BigInt(0))) {
       throw galat.aturanBisnis(
         "Pembatalan stok ditolak karena barang sudah tercampur dengan mutasi lain. Lakukan penyesuaian stok bila nilai perlu dikoreksi.",
       );
     }
+
     const rata = qtyBaru === BigInt(0) ? BigInt(0) : bagi(nilaiBaru, qtyBaru);
     await tx
       .update(itemStocks)
@@ -132,10 +182,12 @@ export async function balikMutasiDokumen(tx: Tx, sumber: string, sumberId: strin
         biayaRataRata: keString(rata),
         diubahPada: new Date(),
       })
-      .where(eq(itemStocks.itemId, m.itemId));
+      .where(and(eq(itemStocks.itemId, m.itemId), eq(itemStocks.gudangId, gudangId)));
+
     await tx.insert(stockMovements).values({
       tanggal,
       itemId: m.itemId,
+      gudangId,
       jenis: masuk ? "KELUAR" : "MASUK",
       kuantitas: m.kuantitas,
       biayaSatuan: m.biayaSatuan,

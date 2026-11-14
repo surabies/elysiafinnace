@@ -8,6 +8,104 @@
       "when": 1794407467124,
       "tag": "0000_pretty_sharon_carter",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794652766955,
+      "tag": "0001_warm_alice",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794653536605,
+      "tag": "0002_modern_smiling_tiger",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794653844665,
+      "tag": "0003_yielding_ezekiel",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794654185494,
+      "tag": "0004_overrated_white_tiger",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794654376198,
+      "tag": "0005_odd_absorbing_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794655018100,
+      "tag": "0006_amusing_steve_rogers",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794655620206,
+      "tag": "0007_simple_reptil",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794657071465,
+      "tag": "0008_tired_shooting_star",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794658226490,
+      "tag": "0009_multi_warehouse_m7",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794659933518,
+      "tag": "0010_pajak_indonesia_m8",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794661930660,
+      "tag": "0011_aset_tetap_m9",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1794663360000,
+      "tag": "0012_anggaran_dimensi_m10",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1794665400000,
+      "tag": "0013_rbac_multi_tenant_audit_m11",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1794667200000,
+      "tag": "0014_otomasi_dan_produksi_m13_m14",
+      "breakpoints": true
     }
   ]
 }

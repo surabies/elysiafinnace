@@ -4,17 +4,16 @@
  * jadi mengganti URL cukup di satu tempat.
  */
 export const ROUTES = {
-  dashboard: "/",
+  dashboard: "/dashboard",
   analytics: "/analytics",
   calendar: "/kalender",
 
   sales: {
-    quotes: "/penjualan/penawaran",
     orders: "/penjualan/pesanan",
     invoices: "/penjualan/faktur",
-    newInvoice: "/penjualan/faktur/baru",
-    payments: "/penjualan/penerimaan",
+    payments: "/penjualan/pembayaran",
     returns: "/penjualan/retur",
+    customers: "/kontak/pelanggan",
   },
 
   purchases: {
@@ -22,63 +21,68 @@ export const ROUTES = {
     invoices: "/pembelian/faktur",
     payments: "/pembelian/pembayaran",
     returns: "/pembelian/retur",
+    suppliers: "/kontak/pemasok",
   },
 
   expenses: {
     list: "/biaya",
-    newExpense: "/biaya/baru",
   },
 
   cashBank: {
-    accounts: "/kas-bank/akun",
-    receive: "/kas-bank/terima-uang",
-    send: "/kas-bank/kirim-uang",
+    accounts: "/kas-bank/rekening",
+    mutations: "/kas-bank/mutasi",
     transfer: "/kas-bank/transfer",
     reconcile: "/kas-bank/rekonsiliasi",
   },
 
-  contacts: {
-    customers: "/kontak/pelanggan",
-    suppliers: "/kontak/pemasok",
-    employees: "/kontak/karyawan",
-  },
-
-  products: "/produk",
-
   inventory: {
+    products: "/persediaan/produk",
     warehouses: "/persediaan/gudang",
-    adjustments: "/persediaan/penyesuaian",
     transfers: "/persediaan/transfer",
-    opname: "/persediaan/stok-opname",
+    adjustments: "/persediaan/penyesuaian",
   },
 
-  fixedAssets: "/aset-tetap",
+  fixedAssets: {
+    list: "/aset-tetap/daftar",
+    depreciation: "/aset-tetap/penyusutan",
+    disposal: "/aset-tetap/pelepasan",
+  },
 
   accounting: {
     chartOfAccounts: "/akuntansi/bagan-akun",
     journals: "/akuntansi/jurnal-umum",
+    dimensions: "/akuntansi/dimensi",
     budgets: "/akuntansi/anggaran",
     closing: "/akuntansi/tutup-buku",
   },
 
+  taxes: {
+    ppn: "/pajak/faktur-pajak",
+    pph: "/pajak/bukti-potong",
+    rekap: "/pajak/rekap",
+  },
+
   reports: {
-    prefix: "/laporan",
-    balanceSheet: "/laporan/neraca",
-    incomeStatement: "/laporan/laba-rugi",
-    cashFlow: "/laporan/arus-kas",
-    equity: "/laporan/perubahan-ekuitas",
-    generalLedger: "/laporan/buku-besar",
-    trialBalance: "/laporan/neraca-saldo",
-    receivableAging: "/laporan/umur-piutang",
-    payableAging: "/laporan/umur-utang",
+    financial: "/laporan/finansial",
+    subledgerAging: "/laporan/subledger-aging",
+    trade: "/laporan/dagang",
+    comparative: "/laporan/komparatif",
+    consolidation: "/laporan/konsolidasi",
+  },
+
+  automation: {
+    recurring: "/otomasi/berulang",
+    reminders: "/otomasi/pengingat",
+    integration: "/otomasi/integrasi",
   },
 
   settings: {
     company: "/pengaturan/perusahaan",
-    users: "/pengaturan/pengguna",
-    taxes: "/pengaturan/pajak",
-    currencies: "/pengaturan/mata-uang",
-    numbering: "/pengaturan/penomoran",
+    users: "/pengaturan/pengguna-peran",
+    approvals: "/pengaturan/persetujuan",
+    lockDate: "/pengaturan/kunci-transaksi",
+    auditLog: "/pengaturan/audit-log",
+    diagnostics: "/pengaturan/diagnostik",
   },
 
   help: {

@@ -37,7 +37,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="rounded-xl border bg-card p-6 shadow-sm">
+        <div className="rounded-md border bg-card p-6 shadow-sm">
           <h2 className="text-xl font-semibold">Fondasi & Standar Akuntansi</h2>
           <ul className="mt-4 space-y-3 text-sm text-muted-foreground">
             <li className="flex items-start gap-2">
@@ -63,7 +63,7 @@ export default function Home() {
       <section className="border-t">
         <div className="mx-auto w-full max-w-5xl px-4 py-10">
           <h2 className="text-2xl font-semibold">REST API Modul Keuangan</h2>
-          <dl className="mt-5 divide-y rounded-lg border bg-card">
+          <dl className="mt-5 divide-y rounded-md border bg-card">
             {endpoints.map((endpoint) => (
               <div
                 key={`${endpoint.method} ${endpoint.path}`}
