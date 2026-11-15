@@ -234,6 +234,117 @@ export const AKSI_PERSETUJUAN = ["DISETUJUI", "DITOLAK"] as const;
 export type AksiPersetujuan = (typeof AKSI_PERSETUJUAN)[number];
 
 /* ------------------------------------------------------------------ */
+/* Phase 6: Payroll & Sumber Daya Manusia                            */
+/* ------------------------------------------------------------------ */
+
+export const STATUS_KARYAWAN = ["TETAP", "KONTRAK", "MAGANG", "FREELANCE"] as const;
+export type StatusKaryawan = (typeof STATUS_KARYAWAN)[number];
+
+export const STATUS_PTKP = ["TK/0", "TK/1", "TK/2", "TK/3", "K/0", "K/1", "K/2", "K/3"] as const;
+export type StatusPtkp = (typeof STATUS_PTKP)[number];
+
+export const JENIS_KOMPONEN_GAJI = ["PENDAPATAN", "POTONGAN"] as const;
+export type JenisKomponenGaji = (typeof JENIS_KOMPONEN_GAJI)[number];
+
+export const METODE_HITUNG_KOMPONEN = [
+  "TETAP",
+  "PERSENTASE",
+  "FORMULA_LEMBUR",
+  "BPJS_KES",
+  "BPJS_TK",
+  "PPH21_TER",
+] as const;
+export type MetodeHitungKomponen = (typeof METODE_HITUNG_KOMPONEN)[number];
+
+export const STATUS_PAYROLL = ["DRAFT", "DISETUJUI", "DIBAYAR", "DIBATALKAN"] as const;
+export type StatusPayroll = (typeof STATUS_PAYROLL)[number];
+
+/* ------------------------------------------------------------------ */
+/* Phase 7: Point of Sale (POS)                                       */
+/* ------------------------------------------------------------------ */
+
+export const STATUS_SHIFT_POS = ["BUKA", "TUTUP"] as const;
+export type StatusShiftPos = (typeof STATUS_SHIFT_POS)[number];
+
+export const METODE_BAYAR_POS = [
+  "TUNAI",
+  "QRIS",
+  "DEBIT",
+  "KREDIT",
+  "TRANSFER",
+  "SPLIT",
+] as const;
+export type MetodeBayarPos = (typeof METODE_BAYAR_POS)[number];
+
+export const STATUS_ORDER_POS = ["SELESAI", "BATAL"] as const;
+export type StatusOrderPos = (typeof STATUS_ORDER_POS)[number];
+
+/* ------------------------------------------------------------------ */
+/* Phase 8: Integrasi Marketplace & Omnichannel                      */
+/* ------------------------------------------------------------------ */
+
+export const CHANNEL_MARKETPLACE = [
+  "TOKOPEDIA",
+  "SHOPEE",
+  "TIKTOK",
+  "LAZADA",
+  "BLIBLI",
+] as const;
+export type ChannelMarketplace = (typeof CHANNEL_MARKETPLACE)[number];
+
+export const STATUS_SYNC_MARKETPLACE = ["AKTIF", "NONAKTIF", "ERROR"] as const;
+export type StatusSyncMarketplace = (typeof STATUS_SYNC_MARKETPLACE)[number];
+
+export const STATUS_ORDER_MARKETPLACE = [
+  "MENUNGGU_PEMBAYARAN",
+  "SIAP_DIKIRIM",
+  "SEDANG_DIKIRIM",
+  "SELESAI",
+  "DIBATALKAN",
+] as const;
+export type StatusOrderMarketplace = (typeof STATUS_ORDER_MARKETPLACE)[number];
+
+export const STATUS_SYNC_ORDER = ["MENUNGGU", "DIPROSES", "SELESAI", "GAGAL"] as const;
+export type StatusSyncOrder = (typeof STATUS_SYNC_ORDER)[number];
+
+/* ------------------------------------------------------------------ */
+/* Phase 9: CRM (Customer Relationship Management)                   */
+/* ------------------------------------------------------------------ */
+
+export const STATUS_LEAD = [
+  "BARU",
+  "DIHUBUNGI",
+  "KUALIFIKASI",
+  "PROPOSAL",
+  "NEGOSIASI",
+  "MENANG",
+  "KALAH",
+] as const;
+export type StatusLead = (typeof STATUS_LEAD)[number];
+
+export const STAGE_DEAL = [
+  "PROSPEK",
+  "KUALIFIKASI",
+  "PENAWARAN",
+  "NEGOSIASI",
+  "MENANG",
+  "KALAH",
+] as const;
+export type StageDeal = (typeof STAGE_DEAL)[number];
+
+export const TIPE_AKTIVITAS_CRM = [
+  "TELEPON",
+  "EMAIL",
+  "MEETING",
+  "CATATAN",
+  "TUGAS",
+] as const;
+export type TipeAktivitasCrm = (typeof TIPE_AKTIVITAS_CRM)[number];
+
+export const STATUS_AKTIVITAS_CRM = ["PENDING", "SELESAI", "DIBATALKAN"] as const;
+export type StatusAktivitasCrm = (typeof STATUS_AKTIVITAS_CRM)[number];
+
+/* ------------------------------------------------------------------ */
 /* RBAC: katalog izin                                                    */
 /* ------------------------------------------------------------------ */
 
@@ -291,6 +402,14 @@ export const KATALOG_IZIN = {
   "otomasi.baca": "Melihat jadwal transaksi berulang dan log pengingat",
   "otomasi.kelola": "Mengelola dan mengeksekusi transaksi berulang serta pengingat jatuh tempo",
   "integrasi.kelola": "Mengelola API key dan webhook pihak ketiga",
+  "payroll.baca": "Melihat data karyawan dan slip gaji",
+  "payroll.kelola": "Mengelola data karyawan, komponen gaji, dan memproses payroll",
+  "payroll.bayar": "Menyetujui dan memposting pembayaran payroll ke kas/bank",
+  "pos.kasir": "Membuka shift dan melakukan transaksi kasir POS",
+  "pos.kelola": "Mengelola terminal kasir dan laporan shift POS",
+  "marketplace.kelola": "Mengelola integrasi channel marketplace dan pemetaan SKU",
+  "crm.baca": "Melihat prospek, peluang penjualan, dan aktivitas pelanggan",
+  "crm.kelola": "Mengelola prospek, pipeline deals, dan aktivitas CRM",
 } as const;
 
 export type Izin = keyof typeof KATALOG_IZIN;

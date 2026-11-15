@@ -9,6 +9,8 @@ export interface NavLink {
   label: string;
   href: string;
   icon?: NavIcon;
+  badge?: string;
+  exact?: boolean;
 }
 
 /** Grup yang bisa di-expand. Sengaja hanya 1 level anak agar sidebar tetap ringkas. */
@@ -16,6 +18,7 @@ export interface NavGroup {
   id: string;
   label: string;
   icon: NavIcon;
+  badge?: string;
   children: NavLink[];
 }
 
@@ -25,5 +28,6 @@ export type NavEntry = NavLink | NavGroup;
 export interface NavSection {
   id: string;
   heading?: string;
+  badge?: string;
   items: NavEntry[];
 }

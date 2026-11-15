@@ -1,7 +1,9 @@
 import {
   IconBuildingBank,
   IconBuildingSkyscraper,
+  IconBuildingStore,
   IconCalculator,
+  IconCashRegister,
   IconChartBar,
   IconFileReport,
   IconLayoutDashboard,
@@ -12,13 +14,15 @@ import {
   IconSettings,
   IconShoppingBag,
   IconShoppingCart,
+  IconTargetArrow,
+  IconUsers,
 } from "@tabler/icons-react";
 import { ROUTES } from "../sidebar/routes";
 import type { NavSection } from "./types";
 
 /**
- * Struktur menu aplikasi keuangan lengkap (M1 - M14):
- * Dasbor/Analytics → Transaksi → Operasional & Persediaan → Akuntansi & Pajak → Laporan Enterprise → Otomasi & Sistem.
+ * Struktur menu aplikasi keuangan lengkap terorganisir:
+ * Ringkasan → Keuangan & Akuntansi → Persediaan & Gudang → Ekosistem Enterprise (PRO) → Pusat Laporan → Otomasi & Sistem.
  *
  * Menggunakan @tabler/icons-react langsung untuk performa optimal tanpa network request SVG.
  */
@@ -41,8 +45,8 @@ export const SIDEBAR_MENU: NavSection[] = [
     ],
   },
   {
-    id: "transactions",
-    heading: "Transaksi",
+    id: "finance",
+    heading: "Keuangan & Akuntansi",
     items: [
       {
         id: "sales",
@@ -141,77 +145,6 @@ export const SIDEBAR_MENU: NavSection[] = [
           },
         ],
       },
-    ],
-  },
-  {
-    id: "operations",
-    heading: "Operasional",
-    items: [
-      {
-        id: "inventory",
-        label: "Persediaan",
-        icon: IconPackages,
-        children: [
-          {
-            id: "inv-products",
-            label: "Katalog Produk",
-            href: ROUTES.inventory.products,
-          },
-          {
-            id: "inv-categories",
-            label: "Kategori Produk",
-            href: ROUTES.inventory.categories,
-          },
-          {
-            id: "inv-units",
-            label: "Satuan Ukur",
-            href: ROUTES.inventory.units,
-          },
-          {
-            id: "inv-warehouses",
-            label: "Lokasi Gudang",
-            href: ROUTES.inventory.warehouses,
-          },
-          {
-            id: "inv-transfers",
-            label: "Transfer Gudang",
-            href: ROUTES.inventory.transfers,
-          },
-          {
-            id: "inv-adjustments",
-            label: "Stok Opname",
-            href: ROUTES.inventory.adjustments,
-          },
-        ],
-      },
-      {
-        id: "fixed-assets",
-        label: "Aset Tetap",
-        icon: IconBuildingSkyscraper,
-        children: [
-          {
-            id: "fa-list",
-            label: "Daftar Aset",
-            href: ROUTES.fixedAssets.list,
-          },
-          {
-            id: "fa-depreciation",
-            label: "Penyusutan",
-            href: ROUTES.fixedAssets.depreciation,
-          },
-          {
-            id: "fa-disposal",
-            label: "Pelepasan Aset",
-            href: ROUTES.fixedAssets.disposal,
-          },
-        ],
-      },
-    ],
-  },
-  {
-    id: "accounting",
-    heading: "Akuntansi & Pajak",
-    items: [
       {
         id: "acc",
         label: "Akuntansi",
@@ -261,8 +194,131 @@ export const SIDEBAR_MENU: NavSection[] = [
     ],
   },
   {
+    id: "supply-chain",
+    heading: "Persediaan & Gudang",
+    items: [
+      {
+        id: "inventory",
+        label: "Persediaan",
+        icon: IconPackages,
+        children: [
+          {
+            id: "inv-products",
+            label: "Katalog Produk",
+            href: ROUTES.inventory.products,
+          },
+          {
+            id: "inv-categories",
+            label: "Kategori Produk",
+            href: ROUTES.inventory.categories,
+          },
+          {
+            id: "inv-units",
+            label: "Satuan Ukur",
+            href: ROUTES.inventory.units,
+          },
+          {
+            id: "inv-warehouses",
+            label: "Lokasi Gudang",
+            href: ROUTES.inventory.warehouses,
+          },
+          {
+            id: "inv-transfers",
+            label: "Transfer Gudang",
+            href: ROUTES.inventory.transfers,
+          },
+          {
+            id: "inv-adjustments",
+            label: "Stok Opname",
+            href: ROUTES.inventory.adjustments,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "enterprise",
+    heading: "Ekosistem Enterprise",
+    items: [
+      {
+        id: "pos",
+        label: "POS",
+        icon: IconCashRegister,
+        href: ROUTES.pos.cashier,
+        badge: "PRO",
+      },
+      {
+        id: "payroll",
+        label: "Payroll",
+        icon: IconUsers,
+        badge: "PRO",
+        children: [
+          {
+            id: "payroll-dash",
+            label: "Proses Penggajian",
+            href: ROUTES.payroll.dashboard,
+            exact: true,
+          },
+          {
+            id: "payroll-emp",
+            label: "Direktori Karyawan",
+            href: ROUTES.payroll.employees,
+          },
+        ],
+      },
+      {
+        id: "marketplace",
+        label: "Marketplace",
+        icon: IconBuildingStore,
+        href: ROUTES.marketplace.channels,
+        badge: "PRO",
+      },
+      {
+        id: "crm",
+        label: "CRM",
+        icon: IconTargetArrow,
+        badge: "PRO",
+        children: [
+          {
+            id: "crm-leads",
+            label: "Prospek (Leads)",
+            href: ROUTES.crm.leads,
+          },
+          {
+            id: "crm-deals",
+            label: "Peluang (Deals)",
+            href: ROUTES.crm.deals,
+          },
+        ],
+      },
+      {
+        id: "fixed-assets",
+        label: "Aset Tetap",
+        icon: IconBuildingSkyscraper,
+        badge: "PRO",
+        children: [
+          {
+            id: "fa-list",
+            label: "Daftar Aset",
+            href: ROUTES.fixedAssets.list,
+          },
+          {
+            id: "fa-depreciation",
+            label: "Penyusutan",
+            href: ROUTES.fixedAssets.depreciation,
+          },
+          {
+            id: "fa-disposal",
+            label: "Pelepasan Aset",
+            href: ROUTES.fixedAssets.disposal,
+          },
+        ],
+      },
+    ],
+  },
+  {
     id: "reports",
-    heading: "Laporan Enterprise",
+    heading: "Pusat Laporan",
     items: [
       {
         id: "reports-group",

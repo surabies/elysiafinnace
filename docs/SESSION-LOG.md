@@ -14,6 +14,339 @@ Format:
 - Belum selesai / langkah berikutnya: ...
 ```
 
+## 2026-11-15 — S-068 — Halaman Input Khusus Enterprise & Pembersihan Header Penjualan & Pembelian
+- Milestone: F3/UI (Dedicated Full-Page Entry & Enterprise Data Standards)
+- Dikerjakan:
+  - **Pembersihan Total Header Blok & Tombol Ganda**:
+    - Menghapus blok header judul besar (`<h1>Faktur Penjualan (Invoicing)</h1>`, `<h1>Tagihan Pembelian (Bills & AP)</h1>`) dan deskripsinya yang memakan ruang layar.
+    - Menghapus tombol pojok kanan atas yang redundant dan memindahkan tombol aksi utama (*"Faktur Baru"* & *"Catat Tagihan"*) ke dalam `FrameHeader` DataGrid secara ergonomis.
+  - **Arsitektur Formulir Penuh Khusus (Dedicated Full-Page Entry)**:
+    - Mengganti sistem modal/dialog popup dengan halaman penuh khusus enterprise untuk mencegah isu pemotongan dropdown, batasan z-index, dan keterbatasan ruang tabel multi-baris:
+      - `src/app/(dashboard)/penjualan/faktur/baru/page.tsx` & `_components/faktur-penjualan-form-page.tsx`
+      - `src/app/(dashboard)/pembelian/faktur/baru/page.tsx` & `_components/faktur-pembelian-form-page.tsx`
+    - Menghapus komponen dialog form usang (`faktur-penjualan-form-dialog.tsx` dan `faktur-pembelian-form-dialog.tsx`).
+  - **Standardisasi Data Finansial Enterprise Lengkap**:
+    - **Header Dokumen**: Pemilihan Pelanggan/Pemasok dengan status PKP & NPWP, Nomor Referensi PO / Faktur Pemasok, Tanggal Dokumen, Termin Pembayaran dengan auto-kalkulasi Jatuh Tempo, dan Mata Uang.
+    - **Tabel Rincian Item (Full-Width Line Items)**: Mendukung baris barang persediaan ber-SKU maupun baris biaya/jasa langsung dengan akun buku besar (COA), kuantitas, harga satuan, diskon baris %, dan subtotal bersih.
+    - **Rekapitulasi Finansial Komprehensif**: Subtotal DPP, Diskon Tambahan/Global, PPN Keluaran/Masukan (11%/12%/0%), Biaya Ongkos Kirim, Uang Muka, dan Grand Total Piutang/Hutang.
+    - **Aksi Dokumen Ganda**: Tombol *"Simpan Draft"* dan *"Simpan & Posting"* yang langsung terintegrasi dengan backend API Elysia.
+    - **Dialog Rincian Enterprise**: Menyempurnakan modal detail pada tabel dengan kolom diskon terperinci, metadata kontak, serta aksi posting & pembatalan.
+- File/skema berubah:
+  - `src/app/(dashboard)/penjualan/faktur/page.tsx`
+  - `src/app/(dashboard)/penjualan/faktur/_components/faktur-penjualan-client-view.tsx`
+  - `src/app/(dashboard)/penjualan/faktur/_components/faktur-penjualan-detail-dialog.tsx`
+  - `src/app/(dashboard)/penjualan/faktur/baru/page.tsx` (baru)
+  - `src/app/(dashboard)/penjualan/faktur/baru/_components/faktur-penjualan-form-page.tsx` (baru)
+  - `src/app/(dashboard)/pembelian/faktur/page.tsx`
+  - `src/app/(dashboard)/pembelian/faktur/_components/faktur-pembelian-client-view.tsx`
+  - `src/app/(dashboard)/pembelian/faktur/_components/faktur-pembelian-detail-dialog.tsx`
+  - `src/app/(dashboard)/pembelian/faktur/baru/page.tsx` (baru)
+  - `src/app/(dashboard)/pembelian/faktur/baru/_components/faktur-pembelian-form-page.tsx` (baru)
+  - `docs/SESSION-LOG.md`
+- Migrasi: tidak ada
+- Verifikasi:
+  - `bun run typecheck`: 0 error
+  - `bun run lint`: 0 error
+  - `bun run build`: Berhasil 100% (33 rute Next.js Partial Prerendering)
+- Belum selesai / langkah berikutnya: Membangun modul pengiriman pesanan (DO) dan penerimaan pengadaan (GRN).
+
+
+## 2026-11-15 — S-067 — Standardisasi DataGrid Tabel & Fungsionalitas Penuh Tombol Transaksi Penjualan & Pembelian
+- Milestone: F3/UI (DataGrid Standar, Form Dialog, Detail Dialog & Aksi Tombol Komersial)
+- Dikerjakan:
+  - **Penyelarasan Total Standar Desain Tabel (`DataGrid` & `Frame`)**:
+    - Mengganti tabel HTML primitif dengan ekosistem standar proyek: `DataGrid`, `Frame`, `FrameHeader`, `FramePanel`, `FrameFooter`, `DataGridTable`, `DataGridScrollArea`, `DataGridPagination`, `DataGridColumnHeader`, `DataGridTableRowSelect`, dan `DataGridTableRowSelectAll`.
+    - Mengintegrasikan `@tanstack/react-table` (`useTable`) dengan `dataGridFeatures` untuk sorting, pagination teratur, dan multi-row selection.
+  - **Fungsionalitas Penuh Seluruh Tombol Aksi Transaksi**:
+    - **Pembuatan Faktur & Tagihan Baru**:
+      - Membangun `FakturPenjualanFormDialog` dan `FakturPembelianFormDialog` yang terhubung ke API `POST /penjualan/faktur` dan `POST /pembelian/faktur`.
+      - Fitur pemilihan kontak (*pelanggan/pemasok*), termin pembayaran, tanggal jatuh tempo, catatan, baris item dinamis (*item picker, kuantitas, harga, diskon persen*), kalkulasi otomatis subtotal & PPN, serta opsi "Simpan Draft" atau "Simpan & Langsung Posting".
+    - **Aksi Baris Tabel (*Row Action Dropdown*)**:
+      - Menu titik tiga (`IconDots`): *Lihat Detail*, *Posting Faktur / Tagihan*, *Batalkan Dokumen*, dan *Salin Nomor Faktur*.
+      - Membangun `FakturPenjualanDetailDialog` dan `FakturPembelianDetailDialog` untuk melihat rincian item, subtotal, status, dan riwayat jurnal.
+      - Menghubungkan tombol posting instan ke endpoint `POST /penjualan/faktur/:id/posting` dan `POST /pembelian/faktur/:id/posting`.
+      - Menghubungkan pembatalan ke endpoint `POST /penjualan/faktur/:id/batal` dan `POST /pembelian/faktur/:id/batal` dengan alasan pembatalan.
+    - **Bilah Kontrol Header Terpadu**:
+      - Pencarian instan (nomor faktur, nama/kode kontak) dengan tombol hapus teks pencarian.
+      - Filter dropdown status terintegrasi (*SEMUA, DRAFT, POSTED, LUNAS, BELUM_LUNAS, DIBATALKAN*).
+      - Tombol batal seleksi dengan badge counter jika ada baris yang dipilih.
+  - **Koneksi Data Master Opsi Dropdown**:
+    - Di `src/app/(dashboard)/penjualan/faktur/page.tsx` dan `src/app/(dashboard)/pembelian/faktur/page.tsx`, mengambil data master pelanggan/pemasok, katalog item, dan termin pembayaran secara paralel melalui `apiServer`.
+- File/skema berubah:
+  - `src/app/(dashboard)/penjualan/faktur/page.tsx`
+  - `src/app/(dashboard)/penjualan/faktur/_components/faktur-penjualan-client-view.tsx`
+  - `src/app/(dashboard)/penjualan/faktur/_components/faktur-penjualan-form-dialog.tsx` (baru)
+  - `src/app/(dashboard)/penjualan/faktur/_components/faktur-penjualan-detail-dialog.tsx` (baru)
+  - `src/app/(dashboard)/pembelian/faktur/page.tsx`
+  - `src/app/(dashboard)/pembelian/faktur/_components/faktur-pembelian-client-view.tsx`
+  - `src/app/(dashboard)/pembelian/faktur/_components/faktur-pembelian-form-dialog.tsx` (baru)
+  - `src/app/(dashboard)/pembelian/faktur/_components/faktur-pembelian-detail-dialog.tsx` (baru)
+  - `docs/SESSION-LOG.md`
+- Migrasi: tidak ada
+- Verifikasi:
+  - `bun run typecheck`: 0 error
+  - `bun run lint`: 0 error
+  - `bun run build`: Berhasil 100% (31 rute Next.js Partial Prerendering)
+- Belum selesai / langkah berikutnya: Membangun modul penerimaan barang (Goods Receipt / GRN) dan pengiriman pesanan (Delivery Order / DO) terkait.
+
+
+## 2026-11-15 — S-066 — Integrasi Data Riil Database & Desain Tab Ergonomis Penjualan & Pembelian
+- Milestone: F3/UI (Siklus Dagang Inti: Faktur Penjualan & Tagihan Pembelian)
+- Dikerjakan:
+  - **Koneksi Data Riil Backend Aggregation**:
+    - Menambahkan endpoint `GET /penjualan/ringkasan` (`ringkasanPenjualan`) dan `GET /pembelian/ringkasan` (`ringkasanPembelian`) di modul keuangan backend.
+    - Mengagregasi data aktual database PostgreSQL (`sales_invoices`, `sales_invoice_items`, `purchase_invoices`, `purchase_invoice_items`, `items`) per bulan berjalan & tahun sebelumnya, top 5 item/produk terlaris/terbanyak, serta kalkulasi pangsa distribusi.
+    - Menghubungkan SSR Next.js di `src/app/(dashboard)/penjualan/faktur/page.tsx` dan `src/app/(dashboard)/pembelian/faktur/page.tsx` ke endpoint ringkasan.
+  - **Pembersihan Pembungkus Kontainer Ganda**:
+    - Menghilangkan kontainer ganda (`rounded-2xl border bg-card/60 p-5`) pada `SalesOverview` dan `PurchasesOverview`.
+    - Merender komponen ikhtisar secara bersih (*native & container-free*) memanfaatkan styling internal kartu bawaan tanpa penumpukan border.
+  - **Tata Letak Tab Ergonomis (Dual Tab Workflow)**:
+    - Menerapkan sistem 2 tab modern pada kedua halaman:
+      - **Tab 1: "Daftar Faktur / Tagihan"** (Default): 4 strip KPI ringkas (*Total Nilai, Sisa Piutang/Hutang, Lewat Jatuh Tempo, Lunas*) + bilah pencarian & filter status + tabel data lengkap.
+      - **Tab 2: "Analisis & Tren"**: Tampilan visual analitik interaktif penuh (*SalesOverview* / *PurchasesOverview*) dengan pemilihan metrik omset/pesanan/AOV/pelanggan, grafik tren bulanan, top produk, dan rasio saluran.
+  - **Penyelarasan Tipe & Ikon Serilisasi JSON**:
+    - Membuat properti `icon?: CommerceIconType` opsional pada `SalesProduct` agar data dari API JSON tidak memerlukan objek fungsi React ikon, dengan fallback otomatis ke `IconPackage` / `IconBuildingStore`.
+- File/skema berubah:
+  - `src/components/sales-overview.tsx`
+  - `src/server/modules/keuangan/penjualan/service.ts`
+  - `src/server/modules/keuangan/penjualan/index.ts`
+  - `src/server/modules/keuangan/pembelian/service.ts`
+  - `src/server/modules/keuangan/pembelian/index.ts`
+  - `src/app/(dashboard)/penjualan/faktur/page.tsx`
+  - `src/app/(dashboard)/penjualan/faktur/_components/faktur-penjualan-client-view.tsx`
+  - `src/app/(dashboard)/pembelian/faktur/page.tsx`
+  - `src/app/(dashboard)/pembelian/faktur/_components/faktur-pembelian-client-view.tsx`
+  - `docs/SESSION-LOG.md`
+- Migrasi: tidak ada
+- Verifikasi:
+  - `bun run typecheck`: 0 error
+  - `bun run lint`: 0 error (16 warnings dari existing libraries/data-grid)
+  - `bun run build`: Berhasil 100% (31 rute Next.js Partial Prerendering)
+- Belum selesai / langkah berikutnya: Membangun formulir dialog / modal interaktif untuk pembuatan faktur penjualan dan tagihan pembelian baru.
+
+
+## 2026-11-15 — S-065 — Penerapan Halaman Faktur Penjualan & Tagihan Pembelian Terintegrasi Ikhtisar Analitik
+- Milestone: F3 (Siklus Dagang Inti: Faktur Penjualan & Tagihan Pembelian)
+- Dikerjakan:
+  - **Penerapan Halaman Faktur Penjualan (`/penjualan/faktur`)**:
+    - Memasang komponen analitik `<SalesOverview modeType="penjualan" currency="Rp " />` di bagian atas halaman faktur penjualan.
+    - Menampilkan tabel riwayat transaksi faktur penjualan (`salesInvoices`), terintegrasi langsung dengan API backend `apiServer.keuangan.penjualan.faktur.get`.
+    - Fitur pencarian instan (nomor faktur, nama/kode pelanggan), filter status dokumen (*SEMUA, DRAFT, DISETUJUI, SELESAI, BATAL*), indikator status pelunasan piutang (*Lunas / Sisa Piutang*), dan tombol aksi cepat buat faktur baru.
+  - **Penerapan Halaman Tagihan Pembelian (`/pembelian/faktur`)**:
+    - Memasang komponen analitik pengadaan `<PurchasesOverview currency="Rp " />` di bagian atas halaman tagihan pembelian.
+    - Menampilkan tabel riwayat transaksi tagihan vendor/pemasok (`purchaseInvoices`), terintegrasi langsung dengan API backend `apiServer.keuangan.pembelian.faktur.get`.
+    - Fitur pencarian instan (nomor tagihan, nama/kode pemasok), filter status dokumen, pemantauan sisa hutang usaha (*AP*), tanggal jatuh tempo, dan tombol aksi catat tagihan baru.
+  - **Rute Hub & Redirect Cerdas**:
+    - Menambahkan rute `/penjualan` yang secara otomatis mengarahkan ke `/penjualan/faktur`.
+    - Menambahkan rute `/pembelian` yang secara otomatis mengarahkan ke `/pembelian/faktur`.
+- File/skema berubah:
+  - `src/app/(dashboard)/penjualan/page.tsx` (baru)
+  - `src/app/(dashboard)/penjualan/faktur/page.tsx` (baru)
+  - `src/app/(dashboard)/penjualan/faktur/_components/faktur-penjualan-client-view.tsx` (baru)
+  - `src/app/(dashboard)/pembelian/page.tsx` (baru)
+  - `src/app/(dashboard)/pembelian/faktur/page.tsx` (baru)
+  - `src/app/(dashboard)/pembelian/faktur/_components/faktur-pembelian-client-view.tsx` (baru)
+  - `docs/SESSION-LOG.md`
+- Verifikasi:
+  - `bun run typecheck`: 0 error
+  - `bun run lint`: 0 error
+  - `bun run build`: Berhasil 100% (31 rute Next.js Partial Prerendering)
+- Belum selesai / langkah berikutnya: Membangun formulir dialog / modal pembuatan faktur penjualan dan tagihan pembelian baru.
+
+## 2026-11-15 — S-064 — Modularisasi Komponen Ikhtisar Finansial Penjualan & Pembelian (Sales & Purchases Overview)
+- Milestone: F3/UI (Komponen Analitik & Ikhtisar Transaksi Penjualan & Pembelian)
+- Dikerjakan:
+  - **Perbaikan Total Bug & Error TypeScript (`sales-overview.tsx`)**:
+    - Memperbaiki seluruh error indeks `noUncheckedIndexedAccess: true` pada `years[yearIndex]`, `ResizeObserver ([entry])`, `values[hover]`, dan `products[0]`.
+    - Menghilangkan akses ref saat render (`react-hooks/refs` pada `lastSize.current !== size`) agar kompatibel penuh dengan React 19 Compiler.
+  - **Modularisasi Dual-Mode (`modeType="penjualan"` | `"pembelian"`)**:
+    - Mengintegrasikan dukungan dwiguna untuk **Penjualan (Sales Overview)** dan **Pembelian (Purchases Overview)** dalam satu komponen yang terstandarisasi.
+    - Menyesuaikan metrik, judul, tooltip, dan hint bahasa Indonesia:
+      - **Mode Penjualan**: Total Penjualan, Jumlah Pesanan, Rata-rata Order, Pelanggan Aktif, Produk Terlaris, dan Saluran Penjualan.
+      - **Mode Pembelian**: Total Pembelian, Pesanan Beli (PO), Rata-rata Tagihan, Pemasok Aktif, Barang Pengadaan Terbanyak, dan Saluran Pemasok & Vendor.
+    - Mengekspor komponen siap pakai: `<SalesOverview />`, `<PurchasesOverview />`, generator fixture data (`sampleSalesYear`, `samplePurchaseYear`), dan tipe data terkait.
+  - **Lokalisasi Mata Uang & Angka**:
+    - Mendukung format mata uang Rupiah (`Rp `) dengan pembulatan compact lokal (`M` untuk Miliar, `Jt` untuk Juta, `Rb` untuk Ribu) dan rolling digit animasi.
+  - **Penyelarasan Ikon Tabler**:
+    - Mengganti seluruh ikon Lucide ke `@tabler/icons-react` (`IconArrowUpRight`, `IconArrowDownRight`, `IconChartLine`, `IconChartBar`, `IconPackage`, `IconCoffee`, `IconHeadphones`, `IconShirt`, `IconBuildingStore`).
+- File/skema berubah:
+  - `src/components/sales-overview.tsx`
+  - `docs/SESSION-LOG.md`
+- Verifikasi:
+  - `bun run typecheck`: 0 error
+  - `bun run lint`: 0 error
+  - `bun run build`: Berhasil 100% (27 rute Next.js Partial Prerendering)
+- Belum selesai / langkah berikutnya: Memasang komponen ini ke dashboard penjualan (`/penjualan/pesanan`, `/penjualan/faktur`) dan pembelian (`/pembelian/pesanan`, `/pembelian/faktur`).
+
+## 2026-11-15 — S-063 — Penyelarasan Posisi Badge PRO, Skema Warna Biru Enterprise & Penggantian Arrow Accordion
+- Milestone: F0/UI-UX (Sidebar Alignment, Blue PRO Palette, Smart Chevron Replacement)
+- Dikerjakan:
+  - **Penyelarasan Posisi Badge PRO (100% Right-Aligned)**:
+    - Menyelaraskan seluruh badge `PRO` pada posisi tepi kanan (`ml-auto`), baik pada item tautan tunggal (`SidebarLink`) maupun menu grup bertingkat (`SidebarGroup`), sehingga seluruh badge berjejer sejajar vertikal dengan presisi.
+  - **Palet Warna Biru Enterprise Modern**:
+    - Mengganti palet warna badge menjadi biru enterprise yang kontras, bersih, dan jelas (`bg-blue-500/10 text-blue-600 dark:bg-blue-400/15 dark:text-blue-400 border border-blue-500/25`).
+  - **Penggantian Arrow Accordion pada Menu PRO**:
+    - Menyembunyikan panah chevron (`IconChevronRight`) pada menu grup yang berlabel `PRO` (seperti *Payroll & Karyawan*, *CRM & Prospek Bisnis*, *Aset Tetap*), dan menempatkan badge `PRO` di posisi kanan tersebut.
+    - Fungsi expand/collapse dan animasi accordion tetap berjalan 100% normal saat tombol baris diklik.
+  - **Pembersihan Badge Heading Section**:
+    - Menghilangkan badge `PRO` pada judul seksi *"Ekosistem Enterprise"*, membiarkan judul seksi bersih dan profesional, dengan badge `PRO` hanya disematkan pada masing-masing item fitur.
+- File/skema berubah:
+  - `src/components/layout/sidebar/sidebar-nav.tsx`
+  - `src/components/layout/navigation/sidebar-menu.ts`
+  - `docs/SESSION-LOG.md`
+- Verifikasi:
+  - `bun run typecheck`: 0 error
+  - `bun run lint`: 0 error
+  - `bun run build`: Berhasil 100% (27 rute Next.js Partial Prerendering)
+- Belum selesai / langkah berikutnya: Melanjutkan ke Milestone F2 (Kas & Bank, Biaya Operasional, dan Buku Besar / General Ledger).
+
+## 2026-11-15 — S-062 — Restrukturisasi Navigasi Sidebar Enterprise, Perbaikan Bug Active State & Implementasi Badge PRO
+- Milestone: F0/UI-UX (Restrukturisasi Navigasi Sidebar & Ekosistem Enterprise)
+- Dikerjakan:
+  - **Penyusunan Ulang Struktur Menu Sidebar**:
+    - Memisahkan secara bersih antara transaksi operasional standar (*Core Finance & Accounting*) dengan modul bisnis bernilai tinggi (*Enterprise Ecosystem*).
+    - Membentuk 6 section teratur dan intuitif:
+      1. **Ringkasan**: Dasbor & Analytics
+      2. **Keuangan & Akuntansi**: Penjualan (AR), Pembelian (AP), Biaya Operasional, Kas & Bank, Akuntansi (COA, Jurnal, Dimensi, Anggaran, Tutup Buku), dan Perpajakan.
+      3. **Persediaan & Gudang**: Persediaan, Multi-Gudang, Kategori, Satuan, Transfer, dan Stok Opname.
+      4. **Ekosistem Enterprise `[PRO]`**: POS (Kasir), Payroll & Karyawan, Marketplace Omnichannel, CRM (Leads & Deals), dan Aset Tetap.
+      5. **Pusat Laporan**: Laporan Keuangan, Buku Pembantu & Aging, Komersial, Komparatif, Konsolidasi Holding.
+      6. **Otomasi & Sistem**: Otomasi (Recurring, Reminders, API) & Pengaturan Komprehensif.
+  - **Desain Badge `PRO` yang Minimalis, Elegan & Hemat Ruang**:
+    - Menambahkan dukungan properti `badge?: string` pada `NavSection`, `NavGroup`, dan `NavLink`.
+    - Merancang badge mini pill `PRO` berkelas (`text-[9px] font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20`) yang tidak memakan ruang layout vertikal/horizontal.
+    - Pada mode collapsed (rail sidebar), badge otomatis ditampilkan di tooltip deskriptif (`RailTooltip`).
+  - **Perbaikan Bug State Aktif Sub-menu Payroll (`/payroll` vs `/payroll/karyawan`)**:
+    - **Penyebab**: Fungsi `isPathActive` sebelumnya menggunakan `pathname.startsWith(`${href}/`)` tanpa mengecek tautan saudara (*sibling links*). Akibatnya, saat berada di `/payroll/karyawan`, `/payroll` dianggap aktif secara bersamaan sehingga kedua menu ter-highlight aktif dan berkedip.
+    - **Solusi**:
+      1. Memperbarui `isPathActive` di `utils.ts` untuk membandingkan spesifisitas `siblingHrefs`. Jika ada sibling yang lebih panjang/spesifik dan cocok dengan pathname, URL induk tidak akan dianggap aktif.
+      2. Menambahkan dukungan flag `exact?: boolean` pada `NavLink` untuk kontrol mutlak.
+      3. Menetapkan `exact: true` pada `Proses Penggajian` (`/payroll`), sehingga hanya aktif jika berada tepat di `/payroll`.
+- File/skema berubah:
+  - `src/components/layout/navigation/types.ts`
+  - `src/components/layout/navigation/utils.ts`
+  - `src/components/layout/navigation/sidebar-menu.ts`
+  - `src/components/layout/sidebar/sidebar-nav.tsx`
+  - `docs/SESSION-LOG.md`
+- Migrasi: tidak ada (perubahan level UI/UX Navigasi)
+- Verifikasi:
+  - `bun run typecheck`: 0 error
+  - `bun run lint`: 0 error
+  - `bun run build`: Berhasil 100% (27 rute Next.js Partial Prerendering)
+- Belum selesai / langkah berikutnya: Melanjutkan ke Milestone F2 (Kas & Bank, Biaya Operasional, dan Buku Besar / General Ledger).
+
+## 2026-11-15 — S-061 — Ekspansi Modul Enterprise: Payroll (HR), POS Retail, Marketplace Omnichannel, & CRM
+- Milestone: E1 (HR & Payroll), E2 (POS Kasir), E3 (Marketplace Omnichannel), E4 (CRM)
+- Dikerjakan:
+  - **Pembangunan Modul HR & Payroll (`/payroll` & `/payroll/karyawan`)**:
+    - **Skema Database (`hr-payroll.ts`)**: `employees`, `salary_components`, `payrolls`, `payroll_items`.
+    - **Backend Engine (`src/server/modules/keuangan/payroll/`)**:
+      - Master data karyawan terstruktur (NIK, PTKP TK/0 s/d K/3, status kontrak/tetap/magang/freelance, nomor rekening bank).
+      - Komponen gaji dinamis (gaji pokok, tunjangan, lembur, bonus, potongan).
+      - Kalkulator Pajak PPh 21 TER bulanan sesuai PMK 168/2023 (Kategori A, B, C) dan BPJS Ketenagakerjaan/Kesehatan.
+      - Auto-posting Jurnal GL Pengeluaran Gaji (Debit Beban Gaji vs Kredit Utang Pajak PPh 21, Utang BPJS, dan Kas/Bank).
+    - **Frontend Terpadu**:
+      - Halaman Penggajian (`/payroll`), KPI Strip penggajian, dialog proses batch payroll, dan modal cetak Slip Gaji print-ready.
+      - Halaman Karyawan (`/payroll/karyawan`), tabel karyawan terstruktur, dan form modal tambah/ubah karyawan.
+  - **Pembangunan Modul POS (Point of Sale) Kasir Retail (`/pos`)**:
+    - **Skema Database (`pos.ts`)**: `pos_registers`, `pos_shifts`, `pos_orders`, `pos_order_items`.
+    - **Backend Engine (`src/server/modules/keuangan/pos/`)**:
+      - Registrasi terminal mesin kasir yang terhubung ke gudang cabang fisik dan akun kas laci.
+      - Manajemen shift kasir: Buka shift dengan kas modal awal, tutup shift dengan rekonsiliasi kas fisik dan kalkulasi selisih kas (*cash discrepancy reconciliation*).
+      - Pemrosesan transaksi checkout: Pemotongan kuantitas stok gudang secara otomatis (*atomic inventory stock deduction*) dan posting jurnal penjualan kasir ke buku besar.
+    - **Frontend Terpadu**:
+      - Antarmuka kasir Split-Grid (`/pos`): katalog produk dengan pencarian instan/barcode dan panel keranjang belanja dinamis.
+      - Pilihan multi-metode pembayaran (Tunai, QRIS, Kartu Debit/EDC, Transfer Bank) dengan kalkulasi uang kembalian instan.
+      - Modal Buka Shift, Modal Tutup Shift Kasir, dan Modal Cetak Struk Kasir Thermal print-ready.
+  - **Pembangunan Modul Integrasi Marketplace Omnichannel (`/integrasi/marketplace`)**:
+    - **Skema Database (`marketplace.ts`)**: `marketplace_channels`, `marketplace_product_mappings`, `marketplace_orders`.
+    - **Backend Engine (`src/server/modules/keuangan/marketplace/`)**:
+      - Master saluran marketplace multi-platform (Tokopedia, Shopee, TikTok Shop, Lazada, dsb).
+      - Pemetaan SKU marketplace ke SKU master produk gudang ERP.
+      - Ingestion pesanan e-commerce dengan auto-deduct persediaan gudang ERP secara terpusat.
+    - **Frontend Terpadu**:
+      - Halaman Marketplace (`/integrasi/marketplace`) dengan 3 tab kerja: Saluran Terhubung, Pemetaan Produk SKU, dan Riwayat Pesanan Omnichannel.
+      - Form modal penambahan channel marketplace dan modal pemetaan SKU produk.
+  - **Pembangunan Modul CRM & Prospek Bisnis (`/crm/leads` & `/crm/deals`)**:
+    - **Skema Database (`crm.ts`)**: `crm_leads`, `crm_deals`, `crm_activities`.
+    - **Backend Engine (`src/server/modules/keuangan/crm/`)**:
+      - Manajemen data leads dari multi-sumber (Website, Iklan, Rekomendasi, Walk-in, Telemarketing).
+      - One-click konversi leads yang disetujui langsung menjadi entitas Pelanggan resmi (`partners` tipe PELANGGAN) untuk transaksi penjualan.
+      - Manajemen pipeline tahapan deals bisnis (Prospek, Kualifikasi, Proposal, Negosiasi, Won, Lost) dan aktivitas interaksi.
+    - **Frontend Terpadu**:
+      - Halaman Leads (`/crm/leads`), filter status, KPI konversi, dialog form lead, dan tombol konversi ke kontak pelanggan.
+      - Halaman Deals (`/crm/deals`), pelacakan tahapan pipeline negosiasi, estimasi nilai deals, dan dialog deal baru.
+  - **Integrasi Navigasi & Sidebar**:
+    - Memasang seluruh rute baru ke `src/components/layout/sidebar/routes.ts` dan `src/components/layout/navigation/sidebar-menu.ts` dengan ikon modern dari `@tabler/icons-react`.
+  - **Migrasi Database & Sinkronisasi**:
+    - Drizzle migration `0016_payroll_pos_marketplace_crm.sql` berhasil diterapkan ke database PostgreSQL Neon.
+- File/skema berubah:
+  - `src/db/schema/keuangan/hr-payroll.ts` (baru)
+  - `src/db/schema/keuangan/pos.ts` (baru)
+  - `src/db/schema/keuangan/marketplace.ts` (baru)
+  - `src/db/schema/keuangan/crm.ts` (baru)
+  - `src/db/schema/keuangan/index.ts`
+  - `src/db/schema/keuangan/konstanta.ts`
+  - `src/db/migrations/0016_payroll_pos_marketplace_crm.sql` (baru)
+  - `src/db/migrations/meta/_journal.json`
+  - `src/server/modules/keuangan/payroll/` (model.ts, service.ts, index.ts)
+  - `src/server/modules/keuangan/pos/` (model.ts, service.ts, index.ts)
+  - `src/server/modules/keuangan/marketplace/` (model.ts, service.ts, index.ts)
+  - `src/server/modules/keuangan/crm/` (model.ts, service.ts, index.ts)
+  - `src/server/modules/keuangan/index.ts`
+  - `src/components/layout/sidebar/routes.ts`
+  - `src/components/layout/navigation/sidebar-menu.ts`
+  - `src/app/(dashboard)/payroll/`
+  - `src/app/(dashboard)/pos/`
+  - `src/app/(dashboard)/integrasi/marketplace/`
+  - `src/app/(dashboard)/crm/`
+  - `docs/ROADMAP.md`
+  - `docs/SESSION-LOG.md`
+- Migrasi: `0016_payroll_pos_marketplace_crm.sql` (berhasil diterapkan via `drizzle-kit migrate`)
+- Verifikasi:
+  - `bun run typecheck`: 0 error
+  - `bun run lint`: 0 error (14 warnings kompatibilitas React Hook Form non-breaking)
+  - `bun run build`: Berhasil 100% mengompilasi 27 rute Next.js 16 (Turbopack) dengan Partial Prerendering
+- Belum selesai / langkah berikutnya: Melanjutkan ke Milestone F2 (Kas & Bank, Biaya Operasional, dan Buku Besar / General Ledger).
+
+## 2026-11-15 — S-060 — Penyelesaian Penuh Milestone F1: Halaman Profil Perusahaan & Kunci Transaksi
+- Milestone: F1 (Master Data & Fondasi Bisnis — 100% Selesai)
+- Dikerjakan:
+  - **Pembangunan Halaman Profil Perusahaan & Multi-Entitas (`/pengaturan/perusahaan`)**:
+    - Membangun antarmuka terpadu pengelolaan identitas badan hukum bisnis dan struktur grup holding:
+      - **Tab 1 (Profil Perusahaan Utama)**: Form kartu enterprise untuk nama legal, NPWP 16-digit, telepon kantor, email faktur, domisili legal operasional, mata uang dasar, dan URL logo cetak faktur komersial (dengan preview instan).
+      - **Tab 2 (Multi-Entitas & Holding)**: DataGrid tabel seluruh entitas/anak perusahaan dengan fitur search debounce, filter status aktif, dan pagination.
+      - **Modal Dialog Entitas Baru & Ubah Profil**: Form modal lengkap dengan validasi Zod + React Hook Form, integrasi switch holding group, pemetaan perusahaan induk, dan mutasi Eden Treaty.
+      - **KPI Stats Strip (4 Kartu)**: Holding/Utama, Total Entitas, Entitas Aktif, dan Mata Uang Pembukuan.
+  - **Pembangunan Halaman Kunci Transaksi (`/pengaturan/kunci-transaksi`)**:
+    - Mengimplementasikan antarmuka kontrol internal kepatuhan audit PSAK untuk mencegah manipulasi dan entri tanggal mundur (*backdating*):
+      - **Batas Kunci Semua Transaksi (Lock All)**: Penguncian mutlak yang mengunci seluruh pembuatan, pengubahan, atau penghapusan transaksi bagi seluruh pengguna termasuk Administrator.
+      - **Batas Kunci Pengguna Non-Admin**: Penguncian bagi staf dan operator biasa, memberi hak kelola hanya bagi Administrator Keuangan.
+      - **Pintasan Tanggal Cepat**: Tombol *Akhir Bulan Lalu* dan *Akhir Tahun Buku Lalu* untuk kemudahan operasional saat Tutup Buku.
+      - **Audit Trail & Catatan Penguncian**: Catatan alasan penguncian buku untuk dokumentasi audit eksternal.
+      - **Kartu Edukasi & Integritas PSAK**: Ringkasan dampak modul (AR, AP, Kas & Bank, Jurnal, Biaya, Aset) dan instruksi penggunaan jurnal balik/penyesuaian.
+      - **KPI Stats Strip**: Status Pembukuan (Terkunci/Parsial/Terbuka), Tanggal Kunci Semua, Tanggal Kunci Non-Admin, dan Proteksi PSAK.
+  - **Penyelesaian Milestone F1**:
+    - Seluruh item Master Data & Fondasi Bisnis pada Roadmap F1 kini resmi bertatus `done` 100%.
+- File/skema berubah:
+  - `src/app/(dashboard)/pengaturan/perusahaan/page.tsx`
+  - `src/app/(dashboard)/pengaturan/perusahaan/_components/perusahaan-client-view.tsx`
+  - `src/app/(dashboard)/pengaturan/perusahaan/_components/perusahaan-form-dialog.tsx`
+  - `src/app/(dashboard)/pengaturan/perusahaan/_lib/types.ts`
+  - `src/app/(dashboard)/pengaturan/perusahaan/_lib/schema.ts`
+  - `src/app/(dashboard)/pengaturan/kunci-transaksi/page.tsx`
+  - `src/app/(dashboard)/pengaturan/kunci-transaksi/_components/kunci-transaksi-client-view.tsx`
+  - `src/app/(dashboard)/pengaturan/kunci-transaksi/_lib/types.ts`
+  - `src/app/(dashboard)/pengaturan/kunci-transaksi/_lib/schema.ts`
+  - `docs/ROADMAP.md`
+  - `docs/SESSION-LOG.md`
+- Migrasi: tidak ada (mengonsumsi skema Drizzle & endpoint Elysia `companies` dan `transaction_locks` yang sudah ada)
+- Verifikasi:
+  - `bun run typecheck`: 0 error
+  - `bun run lint`: 0 error (14 warnings bawaan non-breaking)
+  - `bun run build`: Berhasil 100% mengompilasi 21 rute Next.js 16 (Turbopack) dengan Partial Prerendering
+- Belum selesai / langkah berikutnya: Melanjutkan ke Milestone F2 (Kas & Bank, Biaya Operasional, dan Buku Besar / General Ledger).
+
 ## 2026-11-15 — S-059 — Integrasi Navigasi & Penyelarasan Layout Enterprise Halaman Mata Uang & Kurs Valas
 - Milestone: F1 (Master Data & Multi-Currency UI Pattern Consistency)
 - Dikerjakan:

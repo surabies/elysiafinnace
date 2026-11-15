@@ -21,6 +21,9 @@ import { hasActiveChild, isNavGroup, isPathActive } from "../navigation/utils";
 import { navItemClass, subLinkClass } from "../types/styles";
 import { RailTooltip } from "./rail-tooltip";
 
+const PRO_BADGE_CLASS =
+  "inline-flex shrink-0 items-center rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-600 dark:bg-blue-400/15 dark:text-blue-400 border border-blue-500/25 leading-none";
+
 interface SidebarHoverContextValue {
   hoveredId: string | null;
   setHoveredId: (id: string | null) => void;
@@ -35,9 +38,10 @@ interface EntryProps {
   entry: NavEntry;
   pathname: string;
   collapsed: boolean;
+  siblingHrefs?: string[];
 }
 
-function SidebarEntry({ entry, pathname, collapsed }: EntryProps) {
+function SidebarEntry({ entry, pathname, collapsed, siblingHrefs }: EntryProps) {
   if (isNavGroup(entry)) {
     return collapsed ? (
       <SidebarFlyout group={entry} pathname={pathname} />
@@ -52,7 +56,7 @@ function SidebarEntry({ entry, pathname, collapsed }: EntryProps) {
   return (
     <SidebarLink
       item={entry}
-      active={isPathActive(pathname, entry.href)}
+      active={isPathActive(pathname, entry.href, siblingHrefs, entry.exact)}
       collapsed={collapsed}
     />
   );
@@ -75,7 +79,7 @@ function SidebarLink({
     <Link
       href={item.href}
       aria-current={active ? "page" : undefined}
-      aria-label={collapsed ? item.label : undefined}
+      aria-label={collapsed ? (item.badge ? `${item.label} (${item.badge})` : item.label) : undefined}
       onMouseEnter={() => setHoveredId(item.id)}
       className={cn(
         navItemClass(active ? "active" : "idle", collapsed),
@@ -107,21 +111,27 @@ function SidebarLink({
       )}
       <AnimatePresence initial={false}>
         {!collapsed && (
-          <motion.span
+          <motion.div
             initial={{ opacity: 0, width: 0 }}
             animate={{ opacity: 1, width: "auto" }}
             exit={{ opacity: 0, width: 0 }}
             transition={{ duration: 0.18, ease: "easeOut" }}
-            className="relative z-10 truncate"
+            className="relative z-10 flex flex-1 items-center justify-between min-w-0"
           >
-            {item.label}
-          </motion.span>
+            <span className="truncate">{item.label}</span>
+            {item.badge && (
+              <span className={cn("ml-auto", PRO_BADGE_CLASS)}>
+                {item.badge}
+              </span>
+            )}
+          </motion.div>
         )}
       </AnimatePresence>
     </Link>
   );
 
-  return collapsed ? <RailTooltip label={item.label}>{link}</RailTooltip> : link;
+  const tooltipLabel = item.badge ? `${item.label} (${item.badge})` : item.label;
+  return collapsed ? <RailTooltip label={tooltipLabel}>{link}</RailTooltip> : link;
 }
 
 function SidebarGroup({
@@ -138,6 +148,7 @@ function SidebarGroup({
   const IconComp = group.icon;
   const { hoveredId, setHoveredId } = useContext(SidebarHoverContext);
   const isHovered = hoveredId === group.id;
+  const siblingHrefs = group.children.map((c) => c.href);
 
   return (
     <div>
@@ -168,13 +179,19 @@ function SidebarGroup({
         <span className="relative z-10 flex-1 truncate text-start">
           {group.label}
         </span>
-        <motion.div
-          animate={{ rotate: open ? 90 : 0 }}
-          transition={{ type: "spring", stiffness: 350, damping: 25 }}
-          className="relative z-10 shrink-0 text-muted-foreground"
-        >
-          <IconChevronRight size={16} stroke={1.75} />
-        </motion.div>
+        {group.badge ? (
+          <span className={cn("relative z-10 ml-auto", PRO_BADGE_CLASS)}>
+            {group.badge}
+          </span>
+        ) : (
+          <motion.div
+            animate={{ rotate: open ? 90 : 0 }}
+            transition={{ type: "spring", stiffness: 350, damping: 25 }}
+            className="relative z-10 shrink-0 text-muted-foreground"
+          >
+            <IconChevronRight size={16} stroke={1.75} />
+          </motion.div>
+        )}
       </button>
 
       {/* Accordion sub-menu dengan Motion AnimatePresence yang ultra-smooth */}
@@ -211,7 +228,7 @@ function SidebarGroup({
           >
             <ul className="relative min-h-0 space-y-0.5 py-0.5">
               {group.children.map((child, index) => {
-                const active = isPathActive(pathname, child.href);
+                const active = isPathActive(pathname, child.href, siblingHrefs, child.exact);
                 const isLast = index === group.children.length - 1;
                 const isChildHovered = hoveredId === child.id;
                 return (
@@ -270,7 +287,12 @@ function SidebarGroup({
                           />
                         )}
                       </div>
-                      <span className="relative z-10 truncate">{child.label}</span>
+                      <span className="relative z-10 truncate flex-1">{child.label}</span>
+                      {child.badge && (
+                        <span className="relative z-10 ml-1.5 inline-flex shrink-0 items-center rounded px-1.5 py-0.5 text-[8.5px] font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20 leading-none">
+                          {child.badge}
+                        </span>
+                      )}
                     </Link>
                   </li>
                 );
@@ -293,14 +315,16 @@ function SidebarFlyout({
   const [open, setOpen] = useState(false);
   const containsActive = hasActiveChild(group, pathname);
   const IconComp = group.icon;
+  const siblingHrefs = group.children.map((c) => c.href);
+  const triggerLabel = group.badge ? `${group.label} (${group.badge})` : group.label;
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
-      <RailTooltip label={group.label} suppressed={open}>
+      <RailTooltip label={triggerLabel} suppressed={open}>
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            aria-label={group.label}
+            aria-label={triggerLabel}
             className={navItemClass(containsActive ? "active" : "idle", true)}
           >
             <IconComp size={20} stroke={1.75} className="shrink-0" />
@@ -309,30 +333,42 @@ function SidebarFlyout({
       </RailTooltip>
 
       <DropdownMenuContent side="right" align="start" sideOffset={14} className="min-w-56 p-1.5 rounded-xl shadow-xl">
-        <DropdownMenuLabel className="px-2.5 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          {group.label}
+        <DropdownMenuLabel className="flex items-center justify-between gap-2 px-2.5 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          <span>{group.label}</span>
+          {group.badge && (
+            <span className={PRO_BADGE_CLASS}>
+              {group.badge}
+            </span>
+          )}
         </DropdownMenuLabel>
         {group.children.map((child) => {
-          const active = isPathActive(pathname, child.href);
+          const active = isPathActive(pathname, child.href, siblingHrefs, child.exact);
           return (
             <DropdownMenuItem
               key={child.id}
               asChild
               className={cn(
-                "cursor-pointer flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors",
+                "cursor-pointer flex items-center justify-between gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors",
                 active && "bg-sidebar-accent text-sidebar-accent-foreground font-semibold",
               )}
             >
               <Link href={child.href} aria-current={active ? "page" : undefined}>
-                <span
-                  className={cn(
-                    "rounded-full transition-all duration-200",
-                    active
-                      ? "h-2 w-3.5 bg-primary shadow-xs"
-                      : "size-2 bg-muted-foreground/25 border border-border/80",
-                  )}
-                />
-                <span className="truncate">{child.label}</span>
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span
+                    className={cn(
+                      "rounded-full transition-all duration-200 shrink-0",
+                      active
+                        ? "h-2 w-3.5 bg-primary shadow-xs"
+                        : "size-2 bg-muted-foreground/25 border border-border/80",
+                    )}
+                  />
+                  <span className="truncate">{child.label}</span>
+                </div>
+                {child.badge && (
+                  <span className={cn("ml-auto", PRO_BADGE_CLASS)}>
+                    {child.badge}
+                  </span>
+                )}
               </Link>
             </DropdownMenuItem>
           );
@@ -359,45 +395,63 @@ export function SidebarNav({ collapsed }: { collapsed: boolean }) {
           onMouseLeave={() => setHoveredId(null)}
           className={cn("pb-6 pt-2.5", collapsed ? "px-3" : "px-3.5")}
         >
-          {SIDEBAR_MENU.map((section) => (
-            <div key={section.id} role="group" aria-label={section.heading}>
-              {section.heading && (
-                <AnimatePresence mode="wait" initial={false}>
-                  {collapsed ? (
-                    <motion.hr
-                      key="collapsed-divider"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.15 }}
-                      className="mx-auto my-3 w-6 border-border"
-                    />
-                  ) : (
-                    <motion.div
-                      key="expanded-heading"
-                      initial={{ opacity: 0, y: -2 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -2 }}
-                      transition={{ duration: 0.15 }}
-                      className="flex items-center justify-between px-3 pt-5 pb-1.5 select-none"
-                    >
-                      <span className="text-[11px] font-bold tracking-wider uppercase text-muted-foreground/80">
-                        {section.heading}
-                      </span>
-                      <span className="h-px flex-1 ml-3 bg-border/40" />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              )}
-              <ul className="space-y-0.5">
-                {section.items.map((entry) => (
-                  <li key={entry.id}>
-                    <SidebarEntry entry={entry} pathname={pathname} collapsed={collapsed} />
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          {SIDEBAR_MENU.map((section) => {
+            const topLevelHrefs = section.items
+              .map((i) => (!isNavGroup(i) ? i.href : undefined))
+              .filter(Boolean) as string[];
+
+            return (
+              <div key={section.id} role="group" aria-label={section.heading}>
+                {section.heading && (
+                  <AnimatePresence mode="wait" initial={false}>
+                    {collapsed ? (
+                      <motion.hr
+                        key="collapsed-divider"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.15 }}
+                        className="mx-auto my-3 w-6 border-border"
+                      />
+                    ) : (
+                      <motion.div
+                        key="expanded-heading"
+                        initial={{ opacity: 0, y: -2 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -2 }}
+                        transition={{ duration: 0.15 }}
+                        className="flex items-center justify-between px-3 pt-5 pb-1.5 select-none"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] font-bold tracking-wider uppercase text-muted-foreground/80">
+                            {section.heading}
+                          </span>
+                          {section.badge && (
+                            <span className={PRO_BADGE_CLASS}>
+                              {section.badge}
+                            </span>
+                          )}
+                        </div>
+                        <span className="h-px flex-1 ml-3 bg-border/40" />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                )}
+                <ul className="space-y-0.5">
+                  {section.items.map((entry) => (
+                    <li key={entry.id}>
+                      <SidebarEntry
+                        entry={entry}
+                        pathname={pathname}
+                        collapsed={collapsed}
+                        siblingHrefs={topLevelHrefs}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
         </nav>
       </TooltipProvider>
     </SidebarHoverContext.Provider>

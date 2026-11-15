@@ -18,6 +18,13 @@ const parameterId = t.Object({ id: skema.uuid("ID") });
 export const rutaPembelian = new Elysia({ prefix: "/pembelian", name: "keuangan.pembelian" })
   .use(dasarKeuangan)
 
+  /* ------------------- Ringkasan Analitik Pembelian ------------------- */
+  .get("/ringkasan", async ({ query }) => ok(await layanan.ringkasanPembelian(query.tahun)), {
+    beforeHandle: wajibIzin("pembelian.baca"),
+    query: t.Object({ tahun: t.Optional(t.String()) }),
+    detail: { summary: "Ringkasan analitik pembelian tahunan & bulanan", tags: ["Pembelian"] },
+  })
+
   /* ------------------- Pesanan Pembelian (PO) ------------------- */
   .get("/pesanan", async ({ query }) => ok(await layanan.daftarPesananPembelian(query)), {
     beforeHandle: wajibIzin("pembelian.baca"),

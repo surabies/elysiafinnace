@@ -113,6 +113,13 @@
       "when": 1794668000000,
       "tag": "0015_polymorphic_entity_tags",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1794669000000,
+      "tag": "0016_payroll_pos_marketplace_crm",
+      "breakpoints": true
     }
   ]
 }

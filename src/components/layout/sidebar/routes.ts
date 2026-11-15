@@ -50,6 +50,26 @@ export const ROUTES = {
     disposal: "/aset-tetap/pelepasan",
   },
 
+  payroll: {
+    dashboard: "/payroll",
+    employees: "/payroll/karyawan",
+  },
+
+  pos: {
+    cashier: "/pos",
+    shifts: "/pos/shift",
+  },
+
+  marketplace: {
+    channels: "/integrasi/marketplace",
+    mappings: "/integrasi/marketplace/mappings",
+  },
+
+  crm: {
+    leads: "/crm/leads",
+    deals: "/crm/deals",
+  },
+
   accounting: {
     chartOfAccounts: "/akuntansi/bagan-akun",
     journals: "/akuntansi/jurnal-umum",

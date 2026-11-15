@@ -20,4 +20,8 @@ export * from "./anggaran";
 export * from "./kontrol";
 export * from "./otomasi";
 export * from "./produksi";
+export * from "./hr-payroll";
+export * from "./pos";
+export * from "./marketplace";
+export * from "./crm";
 

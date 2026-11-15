@@ -3,14 +3,43 @@ import type { NavEntry, NavGroup, NavIcon, NavSection } from "./types";
 export const isNavGroup = (entry: NavEntry): entry is NavGroup =>
   "children" in entry;
 
-/** Aktif jika URL sama persis, atau berada di bawah href (mis. /biaya/baru → /biaya). */
-export function isPathActive(pathname: string, href: string): boolean {
+/**
+ * Aktif jika URL sama persis, atau berada di bawah href (mis. /biaya/baru → /biaya).
+ * Jika ada siblingHrefs, tautan yang lebih spesifik (panjang string lebih besar) yang menang,
+ * sehingga URL induk seperti /payroll tidak ikut aktif saat pengguna membuka /payroll/karyawan.
+ */
+export function isPathActive(
+  pathname: string,
+  href: string,
+  siblingHrefs?: string[],
+  exact?: boolean,
+): boolean {
   if (href === "/") return pathname === "/";
-  return pathname === href || pathname.startsWith(`${href}/`);
+  if (pathname === href) return true;
+  if (exact) return false;
+
+  if (pathname.startsWith(`${href}/`)) {
+    if (siblingHrefs && siblingHrefs.length > 0) {
+      const hasMoreSpecific = siblingHrefs.some(
+        (sibling) =>
+          sibling !== href &&
+          (pathname === sibling || pathname.startsWith(`${sibling}/`)) &&
+          sibling.length > href.length,
+      );
+      if (hasMoreSpecific) return false;
+    }
+    return true;
+  }
+
+  return false;
 }
 
-export const hasActiveChild = (group: NavGroup, pathname: string): boolean =>
-  group.children.some((child) => isPathActive(pathname, child.href));
+export const hasActiveChild = (group: NavGroup, pathname: string): boolean => {
+  const siblings = group.children.map((child) => child.href);
+  return group.children.some((child) =>
+    isPathActive(pathname, child.href, siblings, child.exact),
+  );
+};
 
 export interface SearchableLink {
   id: string;

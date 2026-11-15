@@ -31,6 +31,10 @@ import { rutaOtomasi } from "./otomasi";
 import { rutaProduksi } from "./produksi";
 import { rutaOnboarding } from "./onboarding";
 import { rutaPenomoran } from "./penomoran";
+import { rutaPayroll } from "./payroll";
+import { rutaPos } from "./pos";
+import { rutaMarketplace } from "./marketplace";
+import { rutaCrm } from "./crm";
 
 /**
  * Modul API Keuangan Enterprise (Phase 1 s/d Phase 4).
@@ -75,6 +79,10 @@ export const modulKeuangan = new Elysia({ prefix: "/keuangan", name: "keuangan" 
   .use(rutaOtomasi)
   .use(rutaProduksi)
   .use(rutaOnboarding)
+  .use(rutaPayroll)
+  .use(rutaPos)
+  .use(rutaMarketplace)
+  .use(rutaCrm)
   .use(rutaLaporan);
 
 export type ModulKeuangan = typeof modulKeuangan;
