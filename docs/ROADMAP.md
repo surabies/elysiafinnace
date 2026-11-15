@@ -366,6 +366,14 @@ _Tujuan: Penyajian laporan keuangan berstandar SAK untuk jajaran manajemen dan a
   - [ ] Laporan Penjualan per Pelanggan/Produk/Sales.
   - [ ] Laporan Pembelian per Pemasok/Produk.
   - [ ] Laporan Komparatif Periode vs Periode (Bulan ini vs Bulan lalu, Tahun ini vs Tahun lalu).
+- [ ] **Business Intelligence & Executive Analytics (`/analytics`)**:
+  - [x] Cetak biru & spesifikasi lengkap arsitektur data analitik finansial ([ANALYTICS-BLUEPRINT.md](./ANALYTICS-BLUEPRINT.md)).
+  - [ ] Pilar 1: Solvabilitas & Daya Tahan Kas (Cash Conversion Cycle / CCC, Net Monthly Burn Rate, Cash Runway, Current/Quick Ratio).
+  - [ ] Pilar 2: Dekomposisi Margin & Efisiensi Beban (Waterfall Tren Margin GPM/OPM/NPM 12 Bulan, Pareto OPEX 80/20).
+  - [ ] Pilar 3: Resiko Penagihan & Konsentrasi Omset (Top 5/10 Customer Concentration Pareto, Days Sales Outstanding / DSO, Credit Limit Exposure).
+  - [ ] Pilar 4: Efisiensi Rantai Pasok & Gudang (Dead Stock / Slow Moving Capital Alert >60 hari, Inventory Turnover / ITO, Vendor Dependency).
+  - [ ] Pilar 5: Tata Kelola Anggaran & Disiplin Finansial (Budget vs Actual Variance per Departemen, Over-Budget Early Warning Alert).
+  - [ ] Pilar 6: Analitika Multikanal & Omnichannel (Direct B2B vs POS Retail vs Marketplace Net Margin Decomposition).
 - [ ] **Cetak Dokumen Print-Ready (HTML/CSS & PDF Preview)**:
   - [x] Template cetak Faktur Penjualan komersial resmi (`src/components/documents/invoice-document.tsx` dengan kop surat, nomor faktur, badge status finansial, rincian pajak PPN, terbilang otomatis Rupiah, dan layout cetak A4 presisi).
   - [ ] Template cetak Surat Jalan & Bukti Penerimaan Barang.
