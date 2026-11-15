@@ -6,10 +6,11 @@ import { skemaHalaman } from "../shared/pagination";
 /* ----------------------------- Kategori ----------------------------- */
 
 export const skemaBuatKategori = t.Object({
-  kode: skema.kode("Kode kategori", 30),
+  kode: t.Optional(skema.kode("Kode kategori", 30)),
   nama: skema.teks("Nama kategori", 150),
   indukId: skema.uuidOpsional("indukId"),
   keterangan: skema.teksOpsional("keterangan", 1000),
+  tagIds: t.Optional(t.Array(t.String())),
 });
 export type InputBuatKategori = Static<typeof skemaBuatKategori>;
 
@@ -88,6 +89,7 @@ export const skemaBuatItem = t.Object({
   akunHppId: skema.uuidOpsional("akunHppId"),
   /** Akun bertipe PENDAPATAN. Default: akun berperan PENDAPATAN_PENJUALAN (bukan Laba Ditahan). */
   akunPendapatanId: skema.uuidOpsional("akunPendapatanId"),
+  tagIds: t.Optional(t.Array(t.String())),
   /** Multi-satuan konversi opsional saat pembuatan */
   daftarSatuan: t.Optional(t.Array(skemaItemSatuan)),
   /** Daftar komponen bundel opsional jika tipeBarang = BUNDEL */
@@ -104,6 +106,7 @@ export type InputUbahItem = Static<typeof skemaUbahItem>;
 export const skemaQueryItem = t.Object({
   tipeBarang: t.Optional(skema.pilihan("tipeBarang", TIPE_BARANG)),
   kategoriId: t.Optional(skema.uuid("kategoriId")),
+  tagId: t.Optional(t.String()),
   aktif: t.Optional(t.BooleanString({ error: "aktif harus true atau false." })),
   q: skemaHalaman.q,
   halaman: skemaHalaman.halaman,

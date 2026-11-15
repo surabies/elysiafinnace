@@ -350,13 +350,15 @@ main {
    4. TOKEN DARK (.dark) — hanya nilai yang berbeda dari light
    -------------------------------------------------------------------------- */
 .dark {
-  --ds-background-100: #000000;
-  --ds-background-200: #000000;
-  --ds-gray-100: #1a1a1a;
-  --ds-gray-200: #1f1f1f;
-  --ds-gray-300: #292929;
-  --ds-gray-400: #2e2e2e;
-  --ds-gray-500: #454545;
+  /* Elevated surface untuk Card, Popover, Dialog, & Table container */
+  --ds-background-100: #121215;
+  /* Deep dark canvas background */
+  --ds-background-200: #09090b;
+  --ds-gray-100: #1a1a1f;
+  --ds-gray-200: #202026;
+  --ds-gray-300: #282830;
+  --ds-gray-400: #2f2f38;
+  --ds-gray-500: #484854;
   --ds-gray-600: #878787;
   --ds-gray-700: #8f8f8f;
   --ds-gray-800: #7d7d7d;

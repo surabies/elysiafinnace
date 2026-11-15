@@ -1,17 +1,19 @@
-import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
-import { db } from "@/db";
+import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
+import { db, type Database } from "@/db";
 import {
   branches,
   departments,
   projects,
   tags,
+  entityTags,
+  journalItems,
   type Cabang,
   type Departemen,
   type Proyek,
   type Tag,
 } from "@/db/schema/keuangan";
 import { galat } from "@/server/core/errors";
-import { PREFIKS, nomorBerikut, hariIni } from "../shared/transaction";
+import { PREFIKS, nomorBerikut, hariIni, type Tx } from "../shared/transaction";
 import type {
   QueryCabangInput,
   QueryDepartemenInput,
@@ -457,4 +459,134 @@ export async function ubahTag(
 
   if (!updated) throw galat.aturanBisnis("Gagal memperbarui tag.");
   return updated;
+}
+
+export async function hapusTag(id: string): Promise<void> {
+  const tagRow = await ambilTag(id);
+
+  // Periksa apakah nama tag sudah pernah dicatat di baris jurnal
+  const [dipakai] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(journalItems)
+    .where(eq(journalItems.tag, tagRow.nama));
+
+  if (dipakai && dipakai.count > 0) {
+    throw galat.aturanBisnis(
+      `Tag '${tagRow.nama}' sudah digunakan pada ${dipakai.count} transaksi dan tidak dapat dihapus permanen. Silakan nonaktifkan statusnya.`,
+    );
+  }
+
+  await db.delete(tags).where(eq(tags.id, id));
+}
+
+// ==========================================
+// 5. HELPER UNIVERSAL POLYMORPHIC ENTITY TAGS
+// ==========================================
+
+export interface ItemTagRingkas {
+  id: string;
+  nama: string;
+  warna: string | null;
+}
+
+export type DbExecutor = Database | Tx;
+
+/**
+ * Menyimpan relasi tag untuk sebuah entitas (mis. KONTAK, PRODUK, KATEGORI, TRANSAKSI).
+ * Menghapus relasi sebelumnya dan mengaitkan tag baru.
+ */
+export async function simpanEntityTags(
+  tx: DbExecutor | undefined,
+  entityType: string,
+  entityId: string,
+  tagIds: string[],
+): Promise<void> {
+  const runner = tx ?? db;
+  // Hapus tag lama
+  await runner
+    .delete(entityTags)
+    .where(
+      and(
+        eq(entityTags.entityType, entityType),
+        eq(entityTags.entityId, entityId),
+      ),
+    );
+
+  if (!tagIds || tagIds.length === 0) return;
+
+  // Insert tag baru unik
+  const unikTagIds = Array.from(new Set(tagIds.filter(Boolean)));
+  if (unikTagIds.length === 0) return;
+
+  await runner.insert(entityTags).values(
+    unikTagIds.map((tagId) => ({
+      tagId,
+      entityType,
+      entityId,
+    })),
+  );
+}
+
+/**
+ * Mengambil peta tag untuk sekelompok entity ID dalam satu batch query (mencegah N+1 query).
+ */
+export async function ambilPetaEntityTags(
+  entityType: string,
+  entityIds: string[],
+): Promise<Map<string, ItemTagRingkas[]>> {
+  const peta = new Map<string, ItemTagRingkas[]>();
+  if (!entityIds || entityIds.length === 0) return peta;
+
+  const rows = await db
+    .select({
+      entityId: entityTags.entityId,
+      tagId: tags.id,
+      nama: tags.nama,
+      warna: tags.warna,
+    })
+    .from(entityTags)
+    .innerJoin(tags, eq(entityTags.tagId, tags.id))
+    .where(
+      and(
+        eq(entityTags.entityType, entityType),
+        inArray(entityTags.entityId, entityIds),
+      ),
+    );
+
+  for (const r of rows) {
+    const list = peta.get(r.entityId) ?? [];
+    list.push({
+      id: r.tagId,
+      nama: r.nama,
+      warna: r.warna,
+    });
+    peta.set(r.entityId, list);
+  }
+
+  return peta;
+}
+
+/**
+ * Mengambil daftar tag untuk satu entitas spesifik.
+ */
+export async function ambilEntityTags(
+  entityType: string,
+  entityId: string,
+): Promise<ItemTagRingkas[]> {
+  const rows = await db
+    .select({
+      id: tags.id,
+      nama: tags.nama,
+      warna: tags.warna,
+    })
+    .from(entityTags)
+    .innerJoin(tags, eq(entityTags.tagId, tags.id))
+    .where(
+      and(
+        eq(entityTags.entityType, entityType),
+        eq(entityTags.entityId, entityId),
+      ),
+    );
+
+  return rows;
 }

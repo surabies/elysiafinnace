@@ -49,7 +49,7 @@ export const skemaSimpanPic = t.Object({
 export type InputSimpanPic = Static<typeof skemaSimpanPic>;
 
 export const skemaBuatKontak = t.Object({
-  kode: skema.kode("Kode kontak", 30),
+  kode: t.Optional(skema.kode("Kode kontak", 30)),
   nama: skema.teks("Nama kontak", 200),
   adalahPelanggan: t.Optional(skema.boolean("adalahPelanggan")),
   adalahPemasok: t.Optional(skema.boolean("adalahPemasok")),
@@ -70,6 +70,7 @@ export const skemaBuatKontak = t.Object({
   /** Batas kredit (string desimal, maks 4 desimal). */
   batasKredit: t.Optional(skema.uang("batasKredit")),
   catatan: skema.teksOpsional("catatan", 2000),
+  tagIds: t.Optional(t.Array(t.String())),
   daftarAlamat: t.Optional(t.Array(skemaSimpanAlamat)),
   daftarPic: t.Optional(t.Array(skemaSimpanPic)),
 });
@@ -84,6 +85,7 @@ export type InputUbahKontak = Static<typeof skemaUbahKontak>;
 export const skemaQueryKontak = t.Object({
   jenis: t.Optional(skema.pilihan("jenis", ["PELANGGAN", "PEMASOK"] as const)),
   grup: skema.teksOpsional("grup", 50),
+  tagId: t.Optional(t.String()),
   aktif: t.Optional(t.BooleanString({ error: "aktif harus true atau false." })),
   q: skemaHalaman.q,
   halaman: skemaHalaman.halaman,

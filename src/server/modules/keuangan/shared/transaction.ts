@@ -26,6 +26,11 @@ export const PREFIKS = {
   PENYUSUTAN_ASET: "DP",
   PROYEK: "PRJ",
   ANGGARAN: "BDG",
+  PELANGGAN: "CUST",
+  PEMASOK: "SUPP",
+  PRODUK: "PRD",
+  KATEGORI_PRODUK: "CAT",
+  GUDANG: "GDG",
 } as const;
 
 /**

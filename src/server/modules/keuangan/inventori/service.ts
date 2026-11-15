@@ -26,10 +26,15 @@ import { balikJurnal, simpanJurnal, type BarisJurnalInput } from "../jurnal/engi
 import { escapeLike, nullJikaKosong } from "../shared/text";
 import { parseCsvKeObjek } from "../shared/csv";
 import { galat } from "@/server/core/errors";
+import {
+  simpanEntityTags,
+  ambilPetaEntityTags,
+  ambilEntityTags,
+} from "../dimensi/service";
 import { ambilMataUang, ambilMataUangDasar } from "../mata-uang/service";
 import { bagi, kali, keBigInt, keString } from "../shared/decimal";
 import { bacaHalaman } from "../shared/pagination";
-import { nomorBerikut, PREFIKS, type Tx } from "../shared/transaction";
+import { hariIni, nomorBerikut, PREFIKS, type Tx } from "../shared/transaction";
 import { balikMutasiDokumen, catatMutasiStok } from "./mutasi";
 import type {
   InputAturItemBundel,
@@ -61,37 +66,91 @@ import type {
 /* ----------------------------- Kategori ----------------------------- */
 
 export async function daftarKategori(opsi: { aktif?: boolean } = {}) {
-  return db
+  const rows = await db
     .select()
     .from(productCategories)
     .where(opsi.aktif === undefined ? undefined : eq(productCategories.aktif, opsi.aktif))
     .orderBy(asc(productCategories.kode));
+
+  const petaTags = await ambilPetaEntityTags("KATEGORI", rows.map((r) => r.id));
+  return rows.map((r) => ({
+    ...r,
+    tags: petaTags.get(r.id) ?? [],
+  }));
 }
 
 export async function ambilKategori(id: string) {
   const [baris] = await db.select().from(productCategories).where(eq(productCategories.id, id));
   if (!baris) throw galat.tidakDitemukan("Kategori produk");
-  return baris;
+  const tags = await ambilEntityTags("KATEGORI", id);
+  return { ...baris, tags };
 }
 
 export async function buatKategori(input: InputBuatKategori, oleh: string) {
   if (input.indukId) await ambilKategori(input.indukId);
-  const [baru] = await db
-    .insert(productCategories)
-    .values({
-      kode: input.kode.trim(),
-      nama: input.nama.trim(),
-      indukId: input.indukId ?? null,
-      keterangan: nullJikaKosong(input.keterangan),
-      dibuatOleh: oleh,
-      diubahOleh: oleh,
-    })
-    .returning();
-  return baru!;
+  return db.transaction(async (tx) => {
+    let kode = input.kode?.trim();
+    if (!kode) {
+      kode = await nomorBerikut(tx, "CAT", hariIni());
+    }
+
+    try {
+      const [baru] = await tx
+        .insert(productCategories)
+        .values({
+          kode,
+          nama: input.nama.trim(),
+          indukId: input.indukId ?? null,
+          keterangan: nullJikaKosong(input.keterangan),
+          dibuatOleh: oleh,
+          diubahOleh: oleh,
+        })
+        .returning();
+
+      if (input.tagIds?.length) {
+        await simpanEntityTags(tx, "KATEGORI", baru!.id, input.tagIds);
+      }
+
+      return baru!;
+    } catch (err: unknown) {
+      if (err && typeof err === "object" && "code" in err && (err as { code: string }).code === "23505") {
+        throw galat.sudahAda(`Kode kategori '${kode}' sudah digunakan. Silakan gunakan kode lain.`);
+      }
+      throw err;
+    }
+  });
+}
+
+export async function hapusKategori(id: string) {
+  const ada = await ambilKategori(id);
+
+  // Periksa apakah ada sub-kategori
+  const [subKat] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(productCategories)
+    .where(eq(productCategories.indukId, id));
+  if (subKat && subKat.count > 0) {
+    throw galat.aturanBisnis(
+      `Kategori '${ada.nama}' memiliki ${subKat.count} sub-kategori aktif. Pindahkan atau hapus sub-kategori terlebih dahulu.`,
+    );
+  }
+
+  // Periksa apakah ada produk terkait
+  const [produk] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(items)
+    .where(eq(items.kategoriId, id));
+  if (produk && produk.count > 0) {
+    throw galat.aturanBisnis(
+      `Kategori '${ada.nama}' digunakan oleh ${produk.count} produk. Silakan ubah kategori produk terkait terlebih dahulu.`,
+    );
+  }
+
+  await db.delete(productCategories).where(eq(productCategories.id, id));
 }
 
 export async function ubahKategori(id: string, input: InputUbahKategori, oleh: string) {
-  await ambilKategori(id);
+  const ada = await ambilKategori(id);
   const set: Partial<typeof productCategories.$inferInsert> = {};
   if (input.kode !== undefined) set.kode = input.kode.trim();
   if (input.nama !== undefined) set.nama = input.nama.trim();
@@ -110,14 +169,24 @@ export async function ubahKategori(id: string, input: InputUbahKategori, oleh: s
     }
     set.indukId = input.indukId;
   }
-  if (Object.keys(set).length === 0) throw galat.aturanBisnis("Tidak ada data yang diubah.");
+  if (Object.keys(set).length === 0 && input.tagIds === undefined) throw galat.aturanBisnis("Tidak ada data yang diubah.");
 
-  const [baru] = await db
-    .update(productCategories)
-    .set({ ...set, diubahOleh: oleh })
-    .where(eq(productCategories.id, id))
-    .returning();
-  return baru!;
+  let barisBaru = ada;
+  if (Object.keys(set).length > 0) {
+    const [b] = await db
+      .update(productCategories)
+      .set({ ...set, diubahOleh: oleh })
+      .where(eq(productCategories.id, id))
+      .returning();
+    barisBaru = { ...b!, tags: ada.tags };
+  }
+
+  if (input.tagIds !== undefined) {
+    await simpanEntityTags(db, "KATEGORI", id, input.tagIds);
+  }
+
+  const tags = await ambilEntityTags("KATEGORI", id);
+  return { ...barisBaru, tags };
 }
 
 /* ------------------------------ Satuan ------------------------------ */
@@ -137,11 +206,47 @@ export async function ambilSatuan(id: string) {
 }
 
 export async function buatSatuan(input: InputBuatSatuan, oleh: string) {
-  const [baru] = await db
-    .insert(unitsOfMeasurement)
-    .values({ kode: input.kode.trim().toUpperCase(), nama: input.nama.trim(), dibuatOleh: oleh, diubahOleh: oleh })
-    .returning();
-  return baru!;
+  const kode = input.kode.trim().toUpperCase();
+  try {
+    const [baru] = await db
+      .insert(unitsOfMeasurement)
+      .values({ kode, nama: input.nama.trim(), dibuatOleh: oleh, diubahOleh: oleh })
+      .returning();
+    return baru!;
+  } catch (err: unknown) {
+    if (err && typeof err === "object" && "code" in err && (err as { code: string }).code === "23505") {
+      throw galat.sudahAda(`Satuan dengan kode '${kode}' sudah terdaftar.`);
+    }
+    throw err;
+  }
+}
+
+export async function hapusSatuan(id: string) {
+  const ada = await ambilSatuan(id);
+
+  // Periksa apakah dipakai sebagai satuan dasar item
+  const [pakaiDasar] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(items)
+    .where(eq(items.satuanId, id));
+  if (pakaiDasar && pakaiDasar.count > 0) {
+    throw galat.aturanBisnis(
+      `Satuan '${ada.kode}' digunakan sebagai satuan dasar oleh ${pakaiDasar.count} produk. Satuan ini tidak dapat dihapus.`,
+    );
+  }
+
+  // Periksa apakah dipakai sebagai satuan konversi multi-UOM
+  const [pakaiKonversi] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(itemUnits)
+    .where(eq(itemUnits.satuanId, id));
+  if (pakaiKonversi && pakaiKonversi.count > 0) {
+    throw galat.aturanBisnis(
+      `Satuan '${ada.kode}' digunakan pada ${pakaiKonversi.count} aturan konversi satuan produk. Hapus aturan konversi tersebut terlebih dahulu.`,
+    );
+  }
+
+  await db.delete(unitsOfMeasurement).where(eq(unitsOfMeasurement.id, id));
 }
 
 export async function ubahSatuan(id: string, input: InputUbahSatuan, oleh: string) {
@@ -165,6 +270,7 @@ export async function ubahSatuan(id: string, input: InputUbahSatuan, oleh: strin
 export async function daftarItem(opsi: {
   tipeBarang?: (typeof items.$inferSelect)["tipeBarang"];
   kategoriId?: string;
+  tagId?: string;
   aktif?: boolean;
   q?: string;
   offset: number;
@@ -174,6 +280,9 @@ export async function daftarItem(opsi: {
   const kondisi = and(
     opsi.tipeBarang ? eq(items.tipeBarang, opsi.tipeBarang) : undefined,
     opsi.kategoriId ? eq(items.kategoriId, opsi.kategoriId) : undefined,
+    opsi.tagId
+      ? sql`EXISTS (SELECT 1 FROM entity_tags WHERE entity_tags.entity_type = 'PRODUK' AND entity_tags.entity_id = ${items.id} AND entity_tags.tag_id = ${opsi.tagId}::uuid)`
+      : undefined,
     opsi.aktif === undefined ? undefined : eq(items.aktif, opsi.aktif),
     q
       ? or(
@@ -214,14 +323,21 @@ export async function daftarItem(opsi: {
     } : null,
   }));
 
-  return { data: hasil, total: hitung?.total ?? 0 };
+  const itemIds = hasil.map((h) => h.id);
+  const petaTags = await ambilPetaEntityTags("PRODUK", itemIds);
+  const hasilDenganTags = hasil.map((h) => ({
+    ...h,
+    tags: petaTags.get(h.id) ?? [],
+  }));
+
+  return { data: hasilDenganTags, total: hitung?.total ?? 0 };
 }
 
 export async function ambilItem(id: string) {
   const [baris] = await db.select().from(items).where(eq(items.id, id));
   if (!baris) throw galat.tidakDitemukan("Item");
 
-  const [satuanDasar, daftarSatuan, daftarBundel, [stok]] = await Promise.all([
+  const [satuanDasar, daftarSatuan, daftarBundel, [stok], tags] = await Promise.all([
     ambilSatuan(baris.satuanId),
     db
       .select({
@@ -257,6 +373,7 @@ export async function ambilItem(id: string) {
           .where(eq(itemBundles.bundleItemId, id))
       : Promise.resolve([]),
     db.select().from(itemStocks).where(eq(itemStocks.itemId, id)),
+    ambilEntityTags("PRODUK", id),
   ]);
 
   return {
@@ -265,6 +382,7 @@ export async function ambilItem(id: string) {
     daftarSatuan,
     daftarBundel,
     stok: baris.tipeBarang === "BARANG_PERSEDIAAN" ? (stok ?? { kuantitas: "0", nilai: "0", biayaRataRata: "0" }) : null,
+    tags,
   };
 }
 
@@ -379,6 +497,10 @@ export async function buatItem(input: InputBuatItem, oleh: string) {
       }
     }
 
+    if (input.tagIds?.length) {
+      await simpanEntityTags(tx, "PRODUK", baru!.id, input.tagIds);
+    }
+
     return baru!;
   });
 }
@@ -429,7 +551,12 @@ export async function ubahItem(id: string, input: InputUbahItem, oleh: string) {
     set.akunPendapatanId = input.akunPendapatanId;
   }
 
-  if (Object.keys(set).length === 0 && !input.daftarSatuan && !input.daftarBundel) {
+  if (
+    Object.keys(set).length === 0 &&
+    !input.daftarSatuan &&
+    !input.daftarBundel &&
+    input.tagIds === undefined
+  ) {
     throw galat.aturanBisnis("Tidak ada data yang diubah.");
   }
 
@@ -442,6 +569,10 @@ export async function ubahItem(id: string, input: InputUbahItem, oleh: string) {
         .where(eq(items.id, id))
         .returning();
       baru = u as typeof ada;
+    }
+
+    if (input.tagIds !== undefined) {
+      await simpanEntityTags(tx, "PRODUK", id, input.tagIds);
     }
 
     if (input.daftarSatuan) {

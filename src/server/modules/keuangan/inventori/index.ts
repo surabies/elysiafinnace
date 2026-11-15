@@ -55,6 +55,12 @@ export const rutaKategoriProduk = new Elysia({ prefix: "/kategori-produk", name:
   .patch("/:id", async ({ params, body, sesi }) => ok(await layanan.ubahKategori(params.id, body, sesi.penggunaId)), {
     params: parameterId,
     body: skemaUbahKategori,
+  })
+  .delete("/:id", async ({ params }) => {
+    await layanan.hapusKategori(params.id);
+    return ok({ pesan: "Kategori produk berhasil dihapus" });
+  }, {
+    params: parameterId,
   });
 
 export const rutaSatuan = new Elysia({ prefix: "/satuan", name: "keuangan.satuan" })
@@ -74,6 +80,12 @@ export const rutaSatuan = new Elysia({ prefix: "/satuan", name: "keuangan.satuan
   .patch("/:id", async ({ params, body, sesi }) => ok(await layanan.ubahSatuan(params.id, body, sesi.penggunaId)), {
     params: parameterId,
     body: skemaUbahSatuan,
+  })
+  .delete("/:id", async ({ params }) => {
+    await layanan.hapusSatuan(params.id);
+    return ok({ pesan: "Satuan berhasil dihapus" });
+  }, {
+    params: parameterId,
   });
 
 export const rutaItem = new Elysia({ prefix: "/item", name: "keuangan.item" })
@@ -86,6 +98,7 @@ export const rutaItem = new Elysia({ prefix: "/item", name: "keuangan.item" })
       const { data, total } = await layanan.daftarItem({
         tipeBarang: query.tipeBarang,
         kategoriId: query.kategoriId,
+        tagId: query.tagId,
         aktif: query.aktif,
         q: query.q,
         offset,

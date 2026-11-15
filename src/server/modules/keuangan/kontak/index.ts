@@ -46,6 +46,7 @@ export const rutaKontak = new Elysia({ prefix: "/kontak", name: "keuangan.kontak
       const { data, total } = await layanan.daftarKontak({
         jenis: query.jenis,
         grup: query.grup,
+        tagId: query.tagId,
         aktif: query.aktif,
         q: query.q,
         offset,

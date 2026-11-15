@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import DevelopmentPage from "@/components/layout/DevelopmentPage";
+import DevelopmentPage from "@/components/layout/development-page";
 
 interface PageProps {
   params: Promise<{ slug: string[] }>;

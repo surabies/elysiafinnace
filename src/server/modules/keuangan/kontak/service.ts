@@ -10,11 +10,16 @@ import {
 } from "@/db/schema/keuangan";
 import { akunByPeran } from "../akun/service";
 import { db } from "../shared/context";
-import type { Tx } from "../shared/transaction";
+import { hariIni, nomorBerikut, type Tx } from "../shared/transaction";
 import { keBigInt, keString } from "../shared/decimal";
 import { escapeLike, nullJikaKosong } from "../shared/text";
 import { parseCsvKeObjek } from "../shared/csv";
 import { galat } from "@/server/core/errors";
+import {
+  simpanEntityTags,
+  ambilPetaEntityTags,
+  ambilEntityTags,
+} from "../dimensi/service";
 import type {
   InputBuatKontak,
   InputBuatTermin,
@@ -105,6 +110,7 @@ async function pastikanTerminDanMataUang(terminId?: string | null, mataUangId?: 
 export async function daftarKontak(opsi: {
   jenis?: "PELANGGAN" | "PEMASOK";
   grup?: string | null;
+  tagId?: string;
   aktif?: boolean;
   q?: string;
   offset: number;
@@ -116,6 +122,9 @@ export async function daftarKontak(opsi: {
     opsi.jenis === "PELANGGAN" ? eq(partners.adalahPelanggan, true) : undefined,
     opsi.jenis === "PEMASOK" ? eq(partners.adalahPemasok, true) : undefined,
     grup ? eq(partners.grup, grup) : undefined,
+    opsi.tagId
+      ? sql`EXISTS (SELECT 1 FROM entity_tags WHERE entity_tags.entity_type = 'KONTAK' AND entity_tags.entity_id = ${partners.id} AND entity_tags.tag_id = ${opsi.tagId}::uuid)`
+      : undefined,
     opsi.aktif === undefined ? undefined : eq(partners.aktif, opsi.aktif),
     q
       ? or(
@@ -131,17 +140,26 @@ export async function daftarKontak(opsi: {
     db.select().from(partners).where(kondisi).orderBy(asc(partners.nama)).limit(opsi.ukuran).offset(opsi.offset),
     db.select({ total: sql<number>`count(*)::int` }).from(partners).where(kondisi),
   ]);
-  return { data, total: hitung?.total ?? 0 };
+
+  const contactIds = data.map((d) => d.id);
+  const petaTags = await ambilPetaEntityTags("KONTAK", contactIds);
+  const dataDenganTags = data.map((item) => ({
+    ...item,
+    tags: petaTags.get(item.id) ?? [],
+  }));
+
+  return { data: dataDenganTags, total: hitung?.total ?? 0 };
 }
 
 export async function ambilKontak(id: string, koneksi: Tx | typeof db = db) {
   const [baris] = await koneksi.select().from(partners).where(eq(partners.id, id));
   if (!baris) throw galat.tidakDitemukan("Kontak");
-  const [daftarAlamat, daftarPic] = await Promise.all([
+  const [daftarAlamat, daftarPic, tags] = await Promise.all([
     koneksi.select().from(partnerAddresses).where(eq(partnerAddresses.kontakId, id)),
     koneksi.select().from(partnerContacts).where(eq(partnerContacts.kontakId, id)),
+    ambilEntityTags("KONTAK", id),
   ]);
-  return { ...baris, daftarAlamat, daftarPic };
+  return { ...baris, daftarAlamat, daftarPic, tags };
 }
 
 export async function buatKontak(input: InputBuatKontak, oleh: string) {
@@ -153,33 +171,48 @@ export async function buatKontak(input: InputBuatKontak, oleh: string) {
   await pastikanTerminDanMataUang(input.terminPembayaranId, input.mataUangId);
 
   return db.transaction(async (tx) => {
-    const [baru] = await tx
-      .insert(partners)
-      .values({
-        kode: input.kode.trim(),
-        nama: input.nama.trim(),
-        adalahPelanggan,
-        adalahPemasok,
-        npwp: nullJikaKosong(input.npwp),
-        nik: nullJikaKosong(input.nik),
-        adalahPkp: input.adalahPkp ?? false,
-        grup: nullJikaKosong(input.grup),
-        namaKontak: nullJikaKosong(input.namaKontak),
-        email: nullJikaKosong(input.email),
-        telepon: nullJikaKosong(input.telepon),
-        alamat: nullJikaKosong(input.alamat),
-        kota: nullJikaKosong(input.kota),
-        provinsi: nullJikaKosong(input.provinsi),
-        kodePos: nullJikaKosong(input.kodePos),
-        negara: input.negara?.trim() || "Indonesia",
-        terminPembayaranId: input.terminPembayaranId ?? null,
-        mataUangId: input.mataUangId ?? null,
-        batasKredit: input.batasKredit ?? "0",
-        catatan: nullJikaKosong(input.catatan),
-        dibuatOleh: oleh,
-        diubahOleh: oleh,
-      })
-      .returning();
+    let kodeKontak = input.kode?.trim();
+    if (!kodeKontak) {
+      const prefiks = adalahPelanggan ? "CUST" : "SUPP";
+      kodeKontak = await nomorBerikut(tx, prefiks, hariIni());
+    }
+
+    let baru: typeof partners.$inferSelect | undefined;
+    try {
+      const [b] = await tx
+        .insert(partners)
+        .values({
+          kode: kodeKontak,
+          nama: input.nama.trim(),
+          adalahPelanggan,
+          adalahPemasok,
+          npwp: nullJikaKosong(input.npwp),
+          nik: nullJikaKosong(input.nik),
+          adalahPkp: input.adalahPkp ?? false,
+          grup: nullJikaKosong(input.grup),
+          namaKontak: nullJikaKosong(input.namaKontak),
+          email: nullJikaKosong(input.email),
+          telepon: nullJikaKosong(input.telepon),
+          alamat: nullJikaKosong(input.alamat),
+          kota: nullJikaKosong(input.kota),
+          provinsi: nullJikaKosong(input.provinsi),
+          kodePos: nullJikaKosong(input.kodePos),
+          negara: input.negara?.trim() || "Indonesia",
+          terminPembayaranId: input.terminPembayaranId ?? null,
+          mataUangId: input.mataUangId ?? null,
+          batasKredit: input.batasKredit ?? "0",
+          catatan: nullJikaKosong(input.catatan),
+          dibuatOleh: oleh,
+          diubahOleh: oleh,
+        })
+        .returning();
+      baru = b;
+    } catch (err: unknown) {
+      if (err && typeof err === "object" && "code" in err && (err as { code: string }).code === "23505") {
+        throw galat.sudahAda(`Kode kontak '${kodeKontak}' sudah digunakan. Silakan gunakan kode lain.`);
+      }
+      throw err;
+    }
 
     if (input.daftarAlamat?.length) {
       await tx.insert(partnerAddresses).values(
@@ -209,6 +242,10 @@ export async function buatKontak(input: InputBuatKontak, oleh: string) {
           adalahUtama: p.adalahUtama ?? false,
         })),
       );
+    }
+
+    if (input.tagIds?.length) {
+      await simpanEntityTags(tx, "KONTAK", baru!.id, input.tagIds);
     }
 
     return ambilKontak(baru!.id, tx);
@@ -296,6 +333,10 @@ export async function ubahKontak(id: string, input: InputUbahKontak, oleh: strin
           })),
         );
       }
+    }
+
+    if (input.tagIds !== undefined) {
+      await simpanEntityTags(tx, "KONTAK", id, input.tagIds);
     }
 
     return ambilKontak(id);

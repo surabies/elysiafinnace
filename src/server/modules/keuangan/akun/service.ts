@@ -18,7 +18,8 @@ import type { InputBuatAkun, InputUbahAkun } from "./model";
 
 const NAMA_OBJEK = "Akun";
 
-export type NodeAkun = Akun & { anak: NodeAkun[] };
+export type ItemAkun = Akun & { kodeMataUang?: string | null; simbolMataUang?: string | null };
+export type NodeAkun = ItemAkun & { anak: NodeAkun[] };
 
 export async function daftarAkun(opsi: {
   tipeAkun?: Akun["tipeAkun"];
@@ -26,11 +27,33 @@ export async function daftarAkun(opsi: {
   bisaDiposting?: boolean;
   peranSistem?: PeranSistem;
   q?: string;
-}) {
+}): Promise<ItemAkun[]> {
   const q = opsi.q?.trim();
   return db
-    .select()
+    .select({
+      id: chartOfAccounts.id,
+      kode: chartOfAccounts.kode,
+      nama: chartOfAccounts.nama,
+      tipeAkun: chartOfAccounts.tipeAkun,
+      normalBalance: chartOfAccounts.normalBalance,
+      indukId: chartOfAccounts.indukId,
+      level: chartOfAccounts.level,
+      bisaDiposting: chartOfAccounts.bisaDiposting,
+      adalahAkunKontra: chartOfAccounts.adalahAkunKontra,
+      peranSistem: chartOfAccounts.peranSistem,
+      kategoriArusKas: chartOfAccounts.kategoriArusKas,
+      mataUangId: chartOfAccounts.mataUangId,
+      kodeMataUang: currencies.kode,
+      simbolMataUang: currencies.simbol,
+      keterangan: chartOfAccounts.keterangan,
+      aktif: chartOfAccounts.aktif,
+      dibuatPada: chartOfAccounts.dibuatPada,
+      diubahPada: chartOfAccounts.diubahPada,
+      dibuatOleh: chartOfAccounts.dibuatOleh,
+      diubahOleh: chartOfAccounts.diubahOleh,
+    })
     .from(chartOfAccounts)
+    .leftJoin(currencies, eq(chartOfAccounts.mataUangId, currencies.id))
     .where(
       and(
         opsi.tipeAkun ? eq(chartOfAccounts.tipeAkun, opsi.tipeAkun) : undefined,

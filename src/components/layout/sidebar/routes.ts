@@ -37,6 +37,8 @@ export const ROUTES = {
 
   inventory: {
     products: "/persediaan/produk",
+    categories: "/persediaan/kategori",
+    units: "/persediaan/satuan",
     warehouses: "/persediaan/gudang",
     transfers: "/persediaan/transfer",
     adjustments: "/persediaan/penyesuaian",
@@ -78,6 +80,9 @@ export const ROUTES = {
 
   settings: {
     company: "/pengaturan/perusahaan",
+    currencies: "/pengaturan/mata-uang",
+    numbering: "/pengaturan/penomoran",
+    tags: "/pengaturan/tag",
     users: "/pengaturan/pengguna-peran",
     approvals: "/pengaturan/persetujuan",
     lockDate: "/pengaturan/kunci-transaksi",

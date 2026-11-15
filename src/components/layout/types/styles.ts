@@ -8,9 +8,9 @@ import { cn } from "@/lib/utils";
 export type NavItemState = "active" | "child-active" | "idle";
 
 const STATE_CLASS: Record<NavItemState, string> = {
-  active: "bg-sidebar-accent text-sidebar-accent-foreground font-medium",
-  "child-active": "text-sidebar-primary font-medium",
-  idle: "text-sidebar-foreground font-medium",
+  active: "bg-primary/10 text-primary font-semibold",
+  "child-active": "text-foreground font-semibold",
+  idle: "text-muted-foreground hover:text-foreground font-medium",
 };
 
 /** Item tingkat atas: satu baris saat expanded, kotak ikon saat collapsed. */
@@ -18,7 +18,7 @@ export function navItemClass(state: NavItemState, collapsed: boolean) {
   return cn(
     "flex cursor-pointer items-center rounded-lg text-label-14 transition-colors duration-150 ease-geist",
     collapsed
-      ? "mx-auto size-11 justify-center hover:bg-sidebar-accent/80"
+      ? "mx-auto size-11 justify-center hover:bg-muted/60"
       : "h-10 w-full gap-3 px-3",
     STATE_CLASS[state],
   );

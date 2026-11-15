@@ -6,6 +6,8 @@ import {
   pgEnum,
   pgTable,
   text,
+  timestamp,
+  unique,
   uuid,
   varchar,
   type AnyPgColumn,
@@ -121,3 +123,27 @@ export type Cabang = typeof branches.$inferSelect;
 export type Departemen = typeof departments.$inferSelect;
 export type Proyek = typeof projects.$inferSelect;
 export type Tag = typeof tags.$inferSelect;
+
+/**
+ * Relasi Polymorphic Tagging Universal (Multi-Entity Tagging).
+ * Mengaitkan tag multi-warna ke Kontak (Pelanggan/Pemasok), Item/Produk, Kategori, Transaksi, Faktur, dll.
+ */
+export const entityTags = pgTable(
+  "entity_tags",
+  {
+    id: kolomId(),
+    tagId: uuid("tag_id")
+      .notNull()
+      .references(() => tags.id, { onDelete: "cascade" }),
+    entityType: varchar("entity_type", { length: 30 }).notNull(), // 'KONTAK' | 'PRODUK' | 'KATEGORI' | 'TRANSAKSI' | 'JURNAL' | 'FAKTUR'
+    entityId: uuid("entity_id").notNull(),
+    dibuatPada: timestamp("dibuat_pada", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("idx_entity_tags_lookup").on(t.entityType, t.entityId),
+    index("idx_entity_tags_tag").on(t.tagId),
+    unique("uq_entity_tag").on(t.tagId, t.entityType, t.entityId),
+  ],
+);
+
+export type EntityTag = typeof entityTags.$inferSelect;

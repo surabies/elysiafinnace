@@ -153,4 +153,15 @@ export const rutaDimensi = new Elysia({ prefix: "/dimensi", name: "keuangan.dime
       params: parameterId,
       body: t.Partial(skemaSimpanTag),
     },
+  )
+  .delete(
+    "/tag/:id",
+    async ({ params }) => {
+      await layanan.hapusTag(params.id);
+      return ok({ pesan: "Tag berhasil dihapus" });
+    },
+    {
+      beforeHandle: wajibIzin("dimensi.kelola"),
+      params: parameterId,
+    },
   );

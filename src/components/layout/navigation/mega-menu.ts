@@ -112,6 +112,7 @@ export const MEGA_MENU_QUICK_LINKS: MegaMenuQuickLink[] = [
   { id: "subledger-aging", label: "Buku besar pembantu & aging", href: ROUTES.reports.subledgerAging },
   { id: "recurring", label: "Transaksi berulang", href: ROUTES.automation.recurring },
   { id: "reminders", label: "Pengingat jatuh tempo", href: ROUTES.automation.reminders },
+  { id: "currencies", label: "Mata uang & kurs valas", href: ROUTES.settings.currencies },
   { id: "company", label: "Profil perusahaan", href: ROUTES.settings.company },
 ];
 

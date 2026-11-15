@@ -49,11 +49,31 @@ export const SIDEBAR_MENU: NavSection[] = [
         label: "Penjualan",
         icon: IconShoppingCart,
         children: [
-          { id: "sales-orders", label: "Pesanan Penjualan", href: ROUTES.sales.orders },
-          { id: "sales-invoices", label: "Faktur Penjualan", href: ROUTES.sales.invoices },
-          { id: "sales-payments", label: "Penerimaan Pembayaran", href: ROUTES.sales.payments },
-          { id: "sales-returns", label: "Retur Penjualan", href: ROUTES.sales.returns },
-          { id: "sales-customers", label: "Data Pelanggan", href: ROUTES.sales.customers },
+          {
+            id: "sales-orders",
+            label: "Pesanan Penjualan",
+            href: ROUTES.sales.orders,
+          },
+          {
+            id: "sales-invoices",
+            label: "Faktur Penjualan",
+            href: ROUTES.sales.invoices,
+          },
+          {
+            id: "sales-payments",
+            label: "Pembayaran Piutang",
+            href: ROUTES.sales.payments,
+          },
+          {
+            id: "sales-returns",
+            label: "Retur Penjualan",
+            href: ROUTES.sales.returns,
+          },
+          {
+            id: "sales-customers",
+            label: "Pelanggan",
+            href: ROUTES.sales.customers,
+          },
         ],
       },
       {
@@ -61,11 +81,31 @@ export const SIDEBAR_MENU: NavSection[] = [
         label: "Pembelian",
         icon: IconShoppingBag,
         children: [
-          { id: "purchase-orders", label: "Pesanan Pembelian", href: ROUTES.purchases.orders },
-          { id: "purchase-invoices", label: "Faktur Pembelian", href: ROUTES.purchases.invoices },
-          { id: "purchase-payments", label: "Pembayaran Pembelian", href: ROUTES.purchases.payments },
-          { id: "purchase-returns", label: "Retur Pembelian", href: ROUTES.purchases.returns },
-          { id: "purchase-suppliers", label: "Data Pemasok", href: ROUTES.purchases.suppliers },
+          {
+            id: "purchase-orders",
+            label: "Pesanan Pembelian",
+            href: ROUTES.purchases.orders,
+          },
+          {
+            id: "purchase-invoices",
+            label: "Faktur Pembelian",
+            href: ROUTES.purchases.invoices,
+          },
+          {
+            id: "purchase-payments",
+            label: "Pembayaran Hutang",
+            href: ROUTES.purchases.payments,
+          },
+          {
+            id: "purchase-returns",
+            label: "Retur Pembelian",
+            href: ROUTES.purchases.returns,
+          },
+          {
+            id: "purchase-suppliers",
+            label: "Pemasok",
+            href: ROUTES.purchases.suppliers,
+          },
         ],
       },
       {
@@ -79,27 +119,69 @@ export const SIDEBAR_MENU: NavSection[] = [
         label: "Kas & Bank",
         icon: IconBuildingBank,
         children: [
-          { id: "cash-accounts", label: "Daftar Rekening", href: ROUTES.cashBank.accounts },
-          { id: "cash-mutations", label: "Mutasi Kas & Bank", href: ROUTES.cashBank.mutations },
-          { id: "cash-transfer", label: "Transfer Antar Kas", href: ROUTES.cashBank.transfer },
-          { id: "cash-reconcile", label: "Rekonsiliasi Bank", href: ROUTES.cashBank.reconcile },
+          {
+            id: "cash-accounts",
+            label: "Rekening Kas",
+            href: ROUTES.cashBank.accounts,
+          },
+          {
+            id: "cash-mutations",
+            label: "Buku Mutasi",
+            href: ROUTES.cashBank.mutations,
+          },
+          {
+            id: "cash-transfer",
+            label: "Transfer Kas",
+            href: ROUTES.cashBank.transfer,
+          },
+          {
+            id: "cash-reconcile",
+            label: "Rekonsiliasi",
+            href: ROUTES.cashBank.reconcile,
+          },
         ],
       },
     ],
   },
   {
     id: "operations",
-    heading: "Operasional & Persediaan",
+    heading: "Operasional",
     items: [
       {
         id: "inventory",
-        label: "Persediaan & Gudang",
+        label: "Persediaan",
         icon: IconPackages,
         children: [
-          { id: "inv-products", label: "Katalog Produk & Stok", href: ROUTES.inventory.products },
-          { id: "inv-warehouses", label: "Daftar Multi-Gudang", href: ROUTES.inventory.warehouses },
-          { id: "inv-transfers", label: "Transfer Antar Gudang", href: ROUTES.inventory.transfers },
-          { id: "inv-adjustments", label: "Penyesuaian & Opname", href: ROUTES.inventory.adjustments },
+          {
+            id: "inv-products",
+            label: "Katalog Produk",
+            href: ROUTES.inventory.products,
+          },
+          {
+            id: "inv-categories",
+            label: "Kategori Produk",
+            href: ROUTES.inventory.categories,
+          },
+          {
+            id: "inv-units",
+            label: "Satuan Ukur",
+            href: ROUTES.inventory.units,
+          },
+          {
+            id: "inv-warehouses",
+            label: "Lokasi Gudang",
+            href: ROUTES.inventory.warehouses,
+          },
+          {
+            id: "inv-transfers",
+            label: "Transfer Gudang",
+            href: ROUTES.inventory.transfers,
+          },
+          {
+            id: "inv-adjustments",
+            label: "Stok Opname",
+            href: ROUTES.inventory.adjustments,
+          },
         ],
       },
       {
@@ -107,9 +189,21 @@ export const SIDEBAR_MENU: NavSection[] = [
         label: "Aset Tetap",
         icon: IconBuildingSkyscraper,
         children: [
-          { id: "fa-list", label: "Daftar Aset & Register", href: ROUTES.fixedAssets.list },
-          { id: "fa-depreciation", label: "Penyusutan Bulanan", href: ROUTES.fixedAssets.depreciation },
-          { id: "fa-disposal", label: "Pelepasan & Write-Off", href: ROUTES.fixedAssets.disposal },
+          {
+            id: "fa-list",
+            label: "Daftar Aset",
+            href: ROUTES.fixedAssets.list,
+          },
+          {
+            id: "fa-depreciation",
+            label: "Penyusutan",
+            href: ROUTES.fixedAssets.depreciation,
+          },
+          {
+            id: "fa-disposal",
+            label: "Pelepasan Aset",
+            href: ROUTES.fixedAssets.disposal,
+          },
         ],
       },
     ],
@@ -123,11 +217,31 @@ export const SIDEBAR_MENU: NavSection[] = [
         label: "Akuntansi",
         icon: IconCalculator,
         children: [
-          { id: "acc-coa", label: "Bagan Akun (COA)", href: ROUTES.accounting.chartOfAccounts },
-          { id: "acc-journals", label: "Jurnal Penyesuaian", href: ROUTES.accounting.journals },
-          { id: "acc-dimensions", label: "Dimensi Biaya (Cost Center)", href: ROUTES.accounting.dimensions },
-          { id: "acc-budgets", label: "Anggaran & Realisasi", href: ROUTES.accounting.budgets },
-          { id: "acc-closing", label: "Tutup Buku Periode", href: ROUTES.accounting.closing },
+          {
+            id: "acc-coa",
+            label: "Bagan Akun",
+            href: ROUTES.accounting.chartOfAccounts,
+          },
+          {
+            id: "acc-journals",
+            label: "Jurnal Umum",
+            href: ROUTES.accounting.journals,
+          },
+          {
+            id: "acc-dimensions",
+            label: "Dimensi Biaya",
+            href: ROUTES.accounting.dimensions,
+          },
+          {
+            id: "acc-budgets",
+            label: "Anggaran & Realisasi",
+            href: ROUTES.accounting.budgets,
+          },
+          {
+            id: "acc-closing",
+            label: "Tutup Buku",
+            href: ROUTES.accounting.closing,
+          },
         ],
       },
       {
@@ -135,9 +249,13 @@ export const SIDEBAR_MENU: NavSection[] = [
         label: "Perpajakan",
         icon: IconReceiptTax,
         children: [
-          { id: "tax-ppn", label: "Faktur Pajak (PPN)", href: ROUTES.taxes.ppn },
-          { id: "tax-pph", label: "Bukti Potong PPh (23/4(2))", href: ROUTES.taxes.pph },
-          { id: "tax-rekap", label: "Rekapitulasi SPT Masa", href: ROUTES.taxes.rekap },
+          { id: "tax-ppn", label: "Faktur Pajak", href: ROUTES.taxes.ppn },
+          { id: "tax-pph", label: "Bukti Potong PPh", href: ROUTES.taxes.pph },
+          {
+            id: "tax-rekap",
+            label: "Rekap SPT Masa",
+            href: ROUTES.taxes.rekap,
+          },
         ],
       },
     ],
@@ -151,11 +269,31 @@ export const SIDEBAR_MENU: NavSection[] = [
         label: "Pusat Laporan",
         icon: IconFileReport,
         children: [
-          { id: "rep-financial", label: "Laporan Finansial Inti", href: ROUTES.reports.financial },
-          { id: "rep-subledger", label: "Subledger & Aging Piutang/Utang", href: ROUTES.reports.subledgerAging },
-          { id: "rep-trade", label: "Laporan Penjualan & Pembelian", href: ROUTES.reports.trade },
-          { id: "rep-comparative", label: "Laba Rugi Multi-Periode", href: ROUTES.reports.comparative },
-          { id: "rep-consolidation", label: "Konsolidasi Grup & Eliminasi", href: ROUTES.reports.consolidation },
+          {
+            id: "rep-financial",
+            label: "Laporan Keuangan",
+            href: ROUTES.reports.financial,
+          },
+          {
+            id: "rep-subledger",
+            label: "Buku Pembantu & Aging",
+            href: ROUTES.reports.subledgerAging,
+          },
+          {
+            id: "rep-trade",
+            label: "Laporan Komersial",
+            href: ROUTES.reports.trade,
+          },
+          {
+            id: "rep-comparative",
+            label: "Laporan Komparatif",
+            href: ROUTES.reports.comparative,
+          },
+          {
+            id: "rep-consolidation",
+            label: "Konsolidasi Holding",
+            href: ROUTES.reports.consolidation,
+          },
         ],
       },
     ],
@@ -166,25 +304,76 @@ export const SIDEBAR_MENU: NavSection[] = [
     items: [
       {
         id: "automation",
-        label: "Otomasi & Integrasi",
+        label: "Otomasi",
         icon: IconRobot,
         children: [
-          { id: "auto-recurring", label: "Transaksi Berulang", href: ROUTES.automation.recurring },
-          { id: "auto-reminders", label: "Pengingat Jatuh Tempo", href: ROUTES.automation.reminders },
-          { id: "auto-integration", label: "API Key & Webhook", href: ROUTES.automation.integration },
+          {
+            id: "auto-recurring",
+            label: "Transaksi Rutin",
+            href: ROUTES.automation.recurring,
+          },
+          {
+            id: "auto-reminders",
+            label: "Pengingat Tempo",
+            href: ROUTES.automation.reminders,
+          },
+          {
+            id: "auto-integration",
+            label: "API & Webhook",
+            href: ROUTES.automation.integration,
+          },
         ],
       },
       {
         id: "settings",
-        label: "Pengaturan & Kontrol",
+        label: "Pengaturan",
         icon: IconSettings,
         children: [
-          { id: "set-company", label: "Profil Perusahaan", href: ROUTES.settings.company },
-          { id: "set-users", label: "Pengguna & Peran (RBAC)", href: ROUTES.settings.users },
-          { id: "set-approvals", label: "Hierarki Persetujuan", href: ROUTES.settings.approvals },
-          { id: "set-lock-date", label: "Kunci Tanggal Transaksi", href: ROUTES.settings.lockDate },
-          { id: "set-audit-log", label: "Jejak Audit (Audit Log)", href: ROUTES.settings.auditLog },
-          { id: "set-diagnostics", label: "Diagnostik & Latensi DB", href: ROUTES.settings.diagnostics },
+          {
+            id: "set-company",
+            label: "Profil Perusahaan",
+            href: ROUTES.settings.company,
+          },
+          {
+            id: "set-currencies",
+            label: "Mata Uang & Kurs",
+            href: ROUTES.settings.currencies,
+          },
+          {
+            id: "set-numbering",
+            label: "Penomoran Dokumen",
+            href: ROUTES.settings.numbering,
+          },
+          {
+            id: "set-tags",
+            label: "Tag Transaksi",
+            href: ROUTES.settings.tags,
+          },
+          {
+            id: "set-users",
+            label: "Pengguna & Peran",
+            href: ROUTES.settings.users,
+          },
+          {
+            id: "set-approvals",
+            label: "Alur Persetujuan",
+            href: ROUTES.settings.approvals,
+          },
+          {
+            id: "set-lock-date",
+            label: "Kunci Transaksi",
+            href: ROUTES.settings.lockDate,
+          },
+          {
+            id: "set-audit-log",
+            label: "Jejak Audit",
+            href: ROUTES.settings.auditLog,
+          },
+          {
+            id: "set-diagnostics",
+            label: "Diagnostik Sistem",
+            href: ROUTES.settings.diagnostics,
+          },
         ],
       },
     ],
