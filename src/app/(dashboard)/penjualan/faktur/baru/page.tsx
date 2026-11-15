@@ -1,4 +1,5 @@
 import * as React from "react";
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { requireSession } from "@/lib/session";
@@ -17,7 +18,30 @@ export const metadata: Metadata = {
   description: "Formulir penerbitan faktur penjualan komersial, pemilihan barang persediaan, dan kalkulasi piutang usaha.",
 };
 
-export default async function FakturPenjualanBaruPage() {
+function FakturPenjualanSkeleton() {
+  return (
+    <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6 lg:p-8 animate-pulse">
+      <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <div className="h-7 w-64 rounded-lg bg-muted" />
+          <div className="h-4 w-96 rounded-md bg-muted/60" />
+        </div>
+        <div className="h-9 w-28 rounded-lg bg-muted" />
+      </div>
+      <div className="rounded-xl border border-border/80 bg-card p-6 space-y-6">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="h-14 rounded-lg bg-muted/50" />
+          <div className="h-14 rounded-lg bg-muted/50" />
+          <div className="h-14 rounded-lg bg-muted/50" />
+        </div>
+        <div className="h-44 rounded-lg bg-muted/40" />
+        <div className="h-28 rounded-lg bg-muted/30" />
+      </div>
+    </div>
+  );
+}
+
+async function FakturPenjualanDataLoader() {
   await requireSession();
 
   const cookie = (await headers()).get("cookie");
@@ -84,5 +108,13 @@ export default async function FakturPenjualanBaruPage() {
       gudangOptions={rawGudang}
       akunOptions={rawAkun}
     />
+  );
+}
+
+export default function FakturPenjualanBaruPage() {
+  return (
+    <Suspense fallback={<FakturPenjualanSkeleton />}>
+      <FakturPenjualanDataLoader />
+    </Suspense>
   );
 }

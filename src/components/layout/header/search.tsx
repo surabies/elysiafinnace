@@ -176,13 +176,17 @@ const CATEGORY_TABS = [
 
 interface SearchProps {
   collapsed?: boolean;
+  trigger?: boolean;
 }
 
 /**
  * Palet Perintah Enterprise & Pusat Aksi Cepat (Executive Command Center).
  * Desain mewah, fungsional, dan responsif dengan navigasi keyboard presisi tinggi.
  */
-export default function Search({ collapsed = false }: SearchProps) {
+export default function Search({
+  collapsed = false,
+  trigger = true,
+}: SearchProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -195,8 +199,13 @@ export default function Search({ collapsed = false }: SearchProps) {
         setOpen((value) => !value);
       }
     };
+    const onOpenCustom = () => setOpen(true);
     window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    window.addEventListener("app:open-search", onOpenCustom);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("app:open-search", onOpenCustom);
+    };
   }, []);
 
   const go = useCallback(
@@ -233,45 +242,46 @@ export default function Search({ collapsed = false }: SearchProps) {
   return (
     <>
       {/* Tombol Trigger Pencarian di Sidebar: Versi Expanded & Collapsed */}
-      {collapsed ? (
-        <RailTooltip label="Pencarian (Ctrl+K)">
+      {trigger &&
+        (collapsed ? (
+          <RailTooltip label="Pencarian (Ctrl+K)">
+            <button
+              type="button"
+              data-search-trigger
+              onClick={() => setOpen(true)}
+              className="mx-auto flex size-8 items-center justify-center rounded-lg border border-border/70 bg-background/60 text-muted-foreground transition-colors hover:border-primary/40 hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label="Cari menu & aksi cepat (Ctrl+K)"
+              aria-haspopup="dialog"
+              aria-expanded={open}
+            >
+              <IconSearch size={16} stroke={1.75} />
+            </button>
+          </RailTooltip>
+        ) : (
           <button
             type="button"
             data-search-trigger
             onClick={() => setOpen(true)}
-            className="mx-auto flex size-8 items-center justify-center rounded-lg border border-border/70 bg-background/60 text-muted-foreground transition-colors hover:border-primary/40 hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            aria-label="Cari menu & aksi cepat (Ctrl+K)"
+            className="group relative flex h-7.5 w-full items-center justify-between rounded-lg border border-border/70 bg-background/60 px-2.5 text-xs font-medium text-muted-foreground shadow-2xs backdrop-blur-md transition-all duration-200 hover:border-primary/40 hover:bg-muted/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-haspopup="dialog"
             aria-expanded={open}
           >
-            <IconSearch size={16} stroke={1.75} />
-          </button>
-        </RailTooltip>
-      ) : (
-        <button
-          type="button"
-          data-search-trigger
-          onClick={() => setOpen(true)}
-          className="group relative flex h-7.5 w-full items-center justify-between rounded-lg border border-border/70 bg-background/60 px-2.5 text-xs font-medium text-muted-foreground shadow-2xs backdrop-blur-md transition-all duration-200 hover:border-primary/40 hover:bg-muted/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          aria-haspopup="dialog"
-          aria-expanded={open}
-        >
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="flex size-4 shrink-0 items-center justify-center text-muted-foreground transition-colors group-hover:text-primary">
-              <IconSearch className="size-3.5" />
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="flex size-4 shrink-0 items-center justify-center text-muted-foreground transition-colors group-hover:text-primary">
+                <IconSearch className="size-3.5" />
+              </div>
+              <span className="truncate text-[11.5px] text-muted-foreground/90 group-hover:text-foreground">
+                Cari menu & aksi...
+              </span>
             </div>
-            <span className="truncate text-[11.5px] text-muted-foreground/90 group-hover:text-foreground">
-              Cari menu & aksi...
-            </span>
-          </div>
 
-          <div className="flex shrink-0 items-center gap-1">
-            <span className="flex h-4.5 items-center justify-center rounded border border-border/80 bg-muted/60 px-1 font-mono text-[9px] font-medium text-muted-foreground transition-colors group-hover:border-foreground/20 group-hover:text-foreground">
-              Ctrl K
-            </span>
-          </div>
-        </button>
-      )}
+            <div className="flex shrink-0 items-center gap-1">
+              <span className="flex h-4.5 items-center justify-center rounded border border-border/80 bg-muted/60 px-1 font-mono text-[9px] font-medium text-muted-foreground transition-colors group-hover:border-foreground/20 group-hover:text-foreground">
+                Ctrl K
+              </span>
+            </div>
+          </button>
+        ))}
 
       {/* Dialog Command Palette Mewah */}
       <CommandDialog

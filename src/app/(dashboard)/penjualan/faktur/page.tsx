@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { requireSession } from "@/lib/session";
 import { apiServer } from "@/lib/api-server";
-import type { SalesYear } from "@/components/sales-overview";
+import type { SalesYear } from "./_components/sales-overview";
 import {
   FakturPenjualanClientView,
   type ItemFakturPenjualan,

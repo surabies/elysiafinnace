@@ -67,7 +67,7 @@ import {
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/reui/badge";
-import { SalesOverview, type SalesYear } from "@/components/sales-overview";
+import { SalesOverview, type SalesYear } from "./sales-overview";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { getApi } from "@/lib/api-client";

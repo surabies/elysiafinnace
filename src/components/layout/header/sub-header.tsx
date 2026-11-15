@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   IconArrowLeft,
+  IconCalendar,
   IconChevronRight,
   IconHome,
 } from "@tabler/icons-react";
@@ -19,6 +20,17 @@ export function SubHeader() {
   const isRoot = pathname === "/dashboard" || pathname === "/" || pathname === "";
   const breadcrumbs = React.useMemo(() => resolveBreadcrumbs(pathname), [pathname]);
 
+  const currentPeriod = React.useMemo(() => {
+    try {
+      return new Intl.DateTimeFormat("id-ID", {
+        month: "long",
+        year: "numeric",
+      }).format(new Date());
+    } catch {
+      return "Bulan Berjalan";
+    }
+  }, []);
+
   const handleBack = () => {
     if (!isRoot) {
       router.back();
@@ -30,19 +42,41 @@ export function SubHeader() {
       {/* Kiri: Breadcrumb Navigasi Murni & Bersih */}
       <nav aria-label="Breadcrumb" className="min-w-0">
         <ol className="flex items-center gap-1.5 text-xs">
-          {/* Ikon Home / Dasbor */}
-          <li className="flex items-center">
+          {/* Ikon Home / Dasbor + Badge Periode Bulan Berjalan saat di Root */}
+          <li className="flex items-center gap-2">
             <Link
               href="/dashboard"
               className={cn(
-                "-ms-1 flex size-7 items-center justify-center rounded-md text-muted-foreground hover:text-foreground transition-colors hover:bg-muted/60",
-                isRoot && "text-foreground font-semibold",
+                "flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors",
+                isRoot
+                  ? "font-semibold text-foreground bg-background/80 shadow-2xs border border-border/70"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
               )}
               title="Dasbor Utama"
             >
-              <IconHome className="size-4.5 shrink-0" stroke={1.8} />
-              <span className="sr-only">Dasbor</span>
+              <IconHome className="size-3.5 shrink-0" stroke={1.8} />
+              <span className={cn(isRoot ? "inline" : "hidden sm:inline")}>
+                Dasbor
+              </span>
             </Link>
+
+            {isRoot && (
+              <>
+                <span
+                  className="text-muted-foreground/40 font-normal select-none"
+                  aria-hidden
+                >
+                  •
+                </span>
+                <div className="flex items-center gap-1.5 rounded-md border border-border/70 bg-background/60 px-2 py-0.5 text-[11px] font-medium text-muted-foreground shadow-2xs">
+                  <IconCalendar
+                    className="size-3 text-primary shrink-0"
+                    stroke={1.8}
+                  />
+                  <span>Periode {currentPeriod}</span>
+                </div>
+              </>
+            )}
           </li>
 
           {!isRoot && (

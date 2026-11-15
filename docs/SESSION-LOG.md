@@ -14,6 +14,260 @@ Format:
 - Belum selesai / langkah berikutnya: ...
 ```
 
+## 2026-11-15 — S-077 — Implementasi Enterprise Dashboard Widgets: Likuiditas Kas & Bank dan Working Capital Runway (AR & AP Aging)
+- Milestone: F3/UI (Executive Financial Dashboard Enterprise Enhancement)
+- Dikerjakan:
+  - **Integrasi Backend Data Riil ke Dashboard**:
+    - Memperbarui `getDashboardSummary()` untuk memanggil secara paralel:
+      - `dashboard-ringkasan` (KPI laba-rugi & kas dari buku besar jurnal).
+      - `aging-piutang` (Laporan Umur Piutang Pelanggan / AR Aging).
+      - `aging-hutang` (Laporan Umur Kewajiban Pemasok / AP Aging).
+      - `rekening-bank` (Master Data Rekening Kas & Bank Aktif).
+      - `neraca` (Pemetaan saldo buku besar riil per akun kas & bank).
+  - **Pembuatan Komponen `BankAccountsCard` (Likuiditas Kas & Bank Multi-Akun)**:
+    - Widget modern enterprise dengan tampilan kartu `rounded-2xl border border-border/80 bg-card p-5 sm:p-6 shadow-xs`.
+    - Total Likuiditas Terkonsolidasi dengan status badge *Live Sync*.
+    - Breakdown detail saldo per rekening bank (BCA, Mandiri, dll.) dan kas kecil (Petty Cash) lengkap dengan nomor rekening/CoA dan format Rupiah tabular.
+    - Quick action link ke manajemen rekening `/kas_bank`.
+  - **Pembuatan Komponen `CashflowRunwayCard` (Tagihan & Kewajiban Jatuh Tempo)**:
+    - Widget analisis modal kerja (*Working Capital Runway*) membandingkan Piutang Usaha (AR) vs Hutang Usaha (AP).
+    - Status Posisi Tagihan Bersih (Surplus Tagihan vs Defisit Kewajiban).
+    - Visual bar progress Lancar vs Jatuh Tempo (>30 hari) untuk AR dan AP.
+    - Navigasi cepat ke faktur penjualan dan pembelian.
+  - **Penataan Layout Dashboard & Skeleton**:
+    - Menata grid 2 kolom responsif (`grid gap-6 lg:grid-cols-2`) antara KPI Hero Header dan Executive Journal Activity.
+    - Menyesuaikan `DashboardSkeleton` agar transisi loading selaras dengan tata letak riil.
+- File/skema berubah:
+  - `src/app/(dashboard)/dashboard/_lib/types.ts`
+  - `src/app/(dashboard)/dashboard/_components/get-dashboard-summary.ts`
+  - `src/app/(dashboard)/dashboard/_components/bank-accounts-card.tsx`
+  - `src/app/(dashboard)/dashboard/_components/cashflow-runway-card.tsx`
+  - `src/app/(dashboard)/dashboard/page.tsx`
+  - `docs/SESSION-LOG.md`
+- Migrasi: tidak ada
+- Verifikasi:
+  - `bun run typecheck`: 0 error (100% type safe)
+  - `bun run lint`: 0 error (16 warnings baseline yang ada sebelumnya)
+  - `bun run build`: Berhasil 100% (33 rute Next.js tanpa kendala)
+- Belum selesai / langkah berikutnya: Modul pengiriman pesanan (DO) dan penerimaan pengadaan (GRN).
+
+## 2026-11-15 — S-076 — Restrukturisasi Root Folder Komponen, Audit Konektivitas Backend, & Redesain Executive Journal Activity
+- Milestone: F3/UI (Component Domain Structure & Executive Journal Activity Alignment)
+- Dikerjakan:
+  - **Pembersihan & Pemindahan Folder Sesuai Domain Fitur**:
+    - Memindahkan `dashboard-header.tsx` dari `src/components/` ke root fitur dasbor: [src/app/(dashboard)/dashboard/_components/dashboard-header.tsx](file:///E:/Coding/elysiafinnace/src/app/(dashboard)/dashboard/_components/dashboard-header.tsx).
+    - Memindahkan `SalesOverview` ke root fitur penjualan: [src/app/(dashboard)/penjualan/faktur/_components/sales-overview.tsx](file:///E:/Coding/elysiafinnace/src/app/(dashboard)/penjualan/faktur/_components/sales-overview.tsx).
+    - Memindahkan `PurchasesOverview` ke root fitur pengadaan: [src/app/(dashboard)/pembelian/faktur/_components/purchases-overview.tsx](file:///E:/Coding/elysiafinnace/src/app/(dashboard)/pembelian/faktur/_components/purchases-overview.tsx).
+    - Menghapus file komponen usang di `src/components/` sehingga direktori bersih.
+  - **Audit Konektivitas Backend & Database Riil**:
+    - Memverifikasi endpoint backend `GET /keuangan/penjualan/ringkasan` yang meng-query SQL riil tabel `sales_invoices`, `sales_invoice_items`, dan `items`.
+    - Memverifikasi endpoint backend `GET /keuangan/pembelian/ringkasan` yang meng-query SQL riil tabel `purchase_invoices`, `purchase_invoice_items`, dan `items`.
+    - Memverifikasi endpoint backend `GET /keuangan/laporan/dashboard-ringkasan` yang menghitung saldo kas dan KPI riil dari tabel `journal_items`, `chart_of_accounts`, dan `journal_entries`.
+  - **Redesain Menyeluruh Komponen `RecentJournals` Menjadi Executive Ledger Activity**:
+    - Mengganti tampilan lama yang polos menjadi kartu audit trail bergaya enterprise:
+      - Desain selaras dengan `DashboardHeader` (`rounded-2xl border border-border/80 bg-card p-5 sm:p-6 shadow-xs`).
+      - Header dengan ikon buku besar, deskripsi audit trail, badge status live sinkronisasi jurnal, dan tombol pintasan *"Buku Jurnal →"*.
+      - Daftar baris jurnal dengan nomor voucher monospaced (`font-mono text-xs font-bold`), badge status `POSTED` (hijau glowing), deskripsi transaksi, nilai debit-kredit berformat Rupiah, dan tanggal berformat Indonesia.
+- File/skema berubah:
+  - `src/app/(dashboard)/dashboard/_components/dashboard-header.tsx`
+  - `src/app/(dashboard)/dashboard/_components/recent-journals.tsx`
+  - `src/app/(dashboard)/dashboard/page.tsx`
+  - `src/app/(dashboard)/penjualan/faktur/_components/sales-overview.tsx`
+  - `src/app/(dashboard)/penjualan/faktur/_components/faktur-penjualan-client-view.tsx`
+  - `src/app/(dashboard)/penjualan/faktur/page.tsx`
+  - `src/app/(dashboard)/pembelian/faktur/_components/purchases-overview.tsx`
+  - `src/app/(dashboard)/pembelian/faktur/_components/faktur-pembelian-client-view.tsx`
+  - `src/app/(dashboard)/pembelian/faktur/page.tsx`
+  - `docs/SESSION-LOG.md`
+- Migrasi: tidak ada
+- Verifikasi:
+  - `bun run typecheck`: 0 error
+  - `bun run lint`: 0 error (16 warnings dari existing vendor/reui components)
+  - `bun run build`: Berhasil 100% (33 rute Next.js Partial Prerendering)
+- Belum selesai / langkah berikutnya: Modul pengiriman pesanan (DO) dan penerimaan pengadaan (GRN).
+
+
+## 2026-11-15 — S-075 — Transformasi Komponen Dashboard Header Finansial & 4 Card Smooth Area Sparklines
+- Milestone: F3/UI (Executive Financial Dashboard Header Integration)
+- Dikerjakan:
+  - **Transformasi Penuh `dashboard-header.tsx` Menjadi Dashboard Finansial Enterprise**:
+    - Memperbaiki seluruh error TypeScript (`noUncheckedIndexedAccess`) dan ESLint hook (`useSyncExternalStore` untuk `useSafeReducedMotion`).
+    - Mengubah 3 card generik e-commerce menjadi **4 Kartu Finansial Riil**:
+      1. *Kas & Setara Kas* (Sky Blue `#0ea5e9` / saldo berjalan)
+      2. *Pendapatan Usaha* (Emerald Green `#10b981` / revenue)
+      3. *Total Beban* (Rose Red `#f43f5e` / beban operasional)
+      4. *Laba Bersih* (Indigo `#6366f1` / margin profitabilitas)
+    - Menerapkan **Opsi 1: Smooth Area Sparkline Seragam** pada ke-4 kartu dengan kurva bezier halus, gradasi vertikal lembut, dan animasi hover titik interaktif.
+    - Menyesuaikan formatting angka ke Rupiah Indonesia kompak dan penuh (`formatMoneyCompact` & `formatMoneyFull`).
+    - Menyelaraskan grafik area interaktif (7H / 30H / 90H) dengan perbandingan garis putus-putus terhadap periode sebelumnya.
+    - Menyelaraskan gauge ring SVG untuk sasaran profitabilitas dan target anggaran laba bulanan.
+  - **Penyatuan Dasbor Utama ([dashboard/page.tsx](file:///E:/Coding/elysiafinnace/src/app/(dashboard)/dashboard/page.tsx))**:
+    - Mengintegrasikan `DashboardHeader` yang terhubung langsung ke data database riil via `summary`.
+    - Mempertahankan kartu audit trail akuntansi **`RecentJournals`** di bawahnya untuk integritas ERP keuangan.
+    - Memperbarui skeleton loading dasbor agar selaras 100% dengan tata letak baru.
+- File/skema berubah:
+  - `src/components/dashboard-header.tsx`
+  - `src/app/(dashboard)/dashboard/page.tsx`
+  - `docs/SESSION-LOG.md`
+- Migrasi: tidak ada
+- Verifikasi:
+  - `bun run typecheck`: 0 error
+  - `bun run lint`: 0 error (16 warnings dari existing vendor/reui components)
+  - `bun run build`: Berhasil 100% (33 rute Next.js Partial Prerendering)
+- Belum selesai / langkah berikutnya: Modul pengiriman pesanan (DO) dan penerimaan pengadaan (GRN).
+
+
+## 2026-11-15 — S-074 — Penjelasan DevTools Floating Button & Resolusi Warning Next.js Instant Navigation
+- Milestone: F3/UI (Next.js 16 PPR & Instant Navigation Compliance)
+- Dikerjakan:
+  - **Identifikasi Tombol Floating Kuning "Insights"**:
+    - Tombol tersebut merupakan *Next.js Dev Overlay / DevTools Indicator* yang hanya aktif pada mode pengembangan (`next dev`). Tombol tidak akan muncul pada lingkungan produksi.
+    - Status kuning "Insights" muncul karena Next.js mendeteksi dynamic data access (`requireSession`, `headers`, un-cached `fetch`) di root Server Component tanpa boundary `<Suspense>`, sehingga menghambat fitur *Partial Prerendering (PPR) / Instant Navigation*.
+  - **Penerapan Suspense Boundary & Streaming Shell**:
+    - Memisahkan data fetching dinamis di [penjualan/faktur/baru/page.tsx](file:///E:/Coding/elysiafinnace/src/app/(dashboard)/penjualan/faktur/baru/page.tsx) ke dalam asynchronous loader component (`FakturPenjualanDataLoader`).
+    - Membungkus loader dengan `<Suspense fallback={<FakturPenjualanSkeleton />}>` sehingga halaman dapat diprerender sebagai shell instan dan data formulir di-stream secara asinkron.
+    - Menerapkan pola yang sama pada [pembelian/faktur/baru/page.tsx](file:///E:/Coding/elysiafinnace/src/app/(dashboard)/pembelian/faktur/baru/page.tsx) (`FakturPembelianDataLoader` + `FakturPembelianSkeleton`).
+- File/skema berubah:
+  - `src/app/(dashboard)/penjualan/faktur/baru/page.tsx`
+  - `src/app/(dashboard)/pembelian/faktur/baru/page.tsx`
+  - `docs/SESSION-LOG.md`
+- Migrasi: tidak ada
+- Verifikasi:
+  - `bun run typecheck`: 0 error
+  - `bun run lint`: 0 error (16 warnings dari existing vendor/reui components)
+  - `bun run build`: Berhasil 100% (33 rute Next.js Partial Prerendering)
+- Belum selesai / langkah berikutnya: Modul pengiriman pesanan (DO) dan penerimaan pengadaan (GRN).
+
+
+## 2026-11-15 — S-073 — Breadcrumb Alignment: Dasbor Label & Badge Periode Bulan Berjalan
+- Milestone: F3/UI (Subheader Breadcrumb Enhancement)
+- Dikerjakan:
+  - **Peningkatan Breadcrumb di Halaman Utama (Dasbor)**:
+    - Mengganti tampilan ikon tunggal `IconHome` yang terisolasi dengan kombinasi elegan: ikon rumah + teks label *"Dasbor"* tebal (`font-semibold text-foreground bg-background/80 border border-border/70`).
+    - Menambahkan pemisah titik halus (`•`) dan badge pill kontekstual **Periode Bulan Berjalan** (mis. `[📅 Periode November 2026]`) secara dinamis menggunakan `Intl.DateTimeFormat` bahasa Indonesia.
+    - Pada halaman dalam (`!isRoot`), ikon rumah tetap menyertakan teks label *"Dasbor"* pada tampilan desktop (`hidden sm:inline`) sehingga membentuk alur hierarki navigasi yang jelas dan padu (`Dasbor > Modul > Halaman`).
+- File/skema berubah:
+  - `src/components/layout/header/sub-header.tsx`
+  - `docs/SESSION-LOG.md`
+- Migrasi: tidak ada
+- Verifikasi:
+  - `bun run typecheck`: 0 error
+  - `bun run lint`: 0 error (16 warnings dari existing vendor/reui components)
+  - `bun run build`: Berhasil 100% (33 rute Next.js Partial Prerendering)
+- Belum selesai / langkah berikutnya: Modul pengiriman pesanan (DO) dan penerimaan pengadaan (GRN).
+
+
+## 2026-11-15 — S-072 — Implementasi Full-Screen Mobile Search Panel (Vercel Style sesuai mobile-nav.md)
+- Milestone: F3/UI (Full-Screen Mobile Search Panel & Auto Search)
+- Dikerjakan:
+  - **Panel Pencarian Full-Screen Penuh Layar (`MobileSearchPanel`)**:
+    - Dibuat sesuai spesifikasi `mobile-nav.md` (Gambar 4): menutupi seluruh layar mobile (`fixed inset-0 z-50 h-dvh max-h-dvh flex flex-col bg-background text-foreground md:hidden`), menutupi top bar, drawer, dan floating bar tanpa overlay setengah transparan.
+    - **Header Baris Input Seukuran Navbar (Tinggi 56px)**:
+      - Sisi kiri: ikon kaca pembesar outline (`IconSearch`).
+      - Bagian tengah: input transparan tanpa border (`text-[16px]` untuk mencegah auto-zoom iOS), placeholder *"Cari halaman atau transaksi…"*, auto focus saat panel dibuka.
+      - Sisi kanan: tombol ikon "X" (`IconX`) untuk menutup panel pencarian secara instan.
+      - Garis pemisah bawah penuh (`border-b border-border/80`).
+    - **Daftar Hasil Pencarian Vertikal (Tinggi ~54px per baris)**:
+      - Ikon outline di kiri (atau avatar bulat berwarna untuk entri akun pengguna).
+      - Dua baris teks vertikal: Judul halaman (font medium `text-sm`) dan Subjudul konteks/jalur modul (`text-xs text-muted-foreground`).
+      - Item tersorot/aktif berlatar abu muda rounded (`bg-muted/70 text-foreground`) dengan ikon indikator `IconCornerDownLeft`.
+      - Saat input kosong: menampilkan 7 halaman rute utama default (Dashboard, Faktur Penjualan, Biaya Operasional, Kas & Bank, Jurnal Akuntansi, Bagan Akun, dan Akun Pengguna).
+      - Saat mengetik: filter real-time secara case-insensitive pada judul, subjudul, dan kata kunci terkait.
+      - Saat tidak ada hasil: tampilan kosong ramah pengguna (`IconSearchOff`, *"Tidak ada hasil untuk '<query>'*").
+    - **Interaksi & Aksesibilitas**:
+      - Dukungan navigasi keyboard: panah atas/bawah (`ArrowUp`/`ArrowDown`), `Enter` untuk membuka, dan `Escape` untuk menutup.
+      - Kunci scroll body di belakang saat panel terbuka (`document.body.style.overflow = "hidden"`).
+      - Animasi transisi fade + slide-up ringan 160ms dengan `AnimatePresence`.
+      - Terhubung langsung ke tombol **Find** di floating bar mobile serta shortcut `Ctrl+K`/`Cmd+K`.
+- File/skema berubah:
+  - `src/components/layout/mobile-nav.tsx`
+  - `docs/SESSION-LOG.md`
+- Migrasi: tidak ada
+- Verifikasi:
+  - `bun run typecheck`: 0 error
+  - `bun run lint`: 0 error (16 warnings dari existing vendor/reui components)
+  - `bun run build`: Berhasil 100% (33 rute Next.js Partial Prerendering)
+- Belum selesai / langkah berikutnya: Modul pengiriman pesanan (DO) dan penerimaan pengadaan (GRN).
+
+
+## 2026-11-15 — S-071 — Finishing Mobile Navigation: White Background "Buat Dokumen", Default Height Action Button & Mobile Command Palette Integration
+- Milestone: F3/UI (Mobile Navigation Polish & Search Integration)
+- Dikerjakan:
+  - **Penyelarasan Warna Style "Buat Dokumen"**: Mengubah latar belakang tombol dropdown *"Buat Dokumen"* agar selaras dengan tombol *"Semua Modul"* berlatar belakang putih solid (`bg-background`, `border-border/80`, `font-medium text-foreground`, ikon abu-abu `text-muted-foreground`), bukan lagi aksen gelap/kebiruan.
+  - **Ukuran Default Button "Catat Transaksi"**: Menyesuaikan tinggi tombol *"Catat Transaksi / Dokumen Baru"* di bagian bawah drawer dari `h-11` menjadi tinggi tombol default standar (`h-9`, `rounded-lg`, `text-xs sm:text-sm`).
+  - **Perbaikan Tombol Search / Find pada Mobile**:
+    - Menambahkan prop `trigger?: boolean` (default `true`) pada komponen `Search` (`src/components/layout/header/search.tsx`) agar `CommandDialog` dapat dimount secara mandiri tanpa tombol trigger bawaan sidebar.
+    - Merender `<Search trigger={false} />` di dalam `<MobileNav />` (`src/components/layout/mobile-nav.tsx`) sehingga event listener keyboard shortcut (`Ctrl+K`) dan custom event `app:open-search` aktif di viewport mobile `< md`.
+    - Tombol `Find` pada floating bar kini langsung membuka Command Palette eksekutif secara instan saat diklik pada layar mobile.
+- File/skema berubah:
+  - `src/components/layout/header/search.tsx`
+  - `src/components/layout/mobile-nav.tsx`
+  - `docs/SESSION-LOG.md`
+- Migrasi: tidak ada
+- Verifikasi:
+  - `bun run typecheck`: 0 error
+  - `bun run lint`: 0 error (16 warnings dari existing vendor/reui components)
+  - `bun run build`: Berhasil 100% (33 rute Next.js Partial Prerendering)
+- Belum selesai / langkah berikutnya: Modul pengiriman pesanan (DO) dan penerimaan pengadaan (GRN).
+
+## 2026-11-15 — S-070 — Penyelarasan Presisi Mobile Navigation Vercel: Stationary Boundary Controls, Desktop-Matched Guide Lines & Pro Badges
+- Milestone: F3/UI (Vercel-Grade Mobile Navigation Alignment)
+- Dikerjakan:
+  - **Penyelarasan Total Interaksi & Anatomi Drawer Vercel**:
+    - **Floating Filter Pills Tanpa Background (Melayang Bebas)**: Menghilangkan background card dan border pada baris kontrol *"Buat Dokumen"* dan *"Semua Modul"* (`bg-transparent`), sehingga kedua filter tampak melayang bebas tanpa latar belakang di posisi 3/4 layar dan menjadi pembatas diam yang kokoh saat menu di-scroll.
+    - **Penjajaran Sempurna Teks, Ikon, Garis & Dot (Desktop Pixel-Perfect)**: Teks menu list kini sejajar presisi dengan teks menu group (`px-3 gap-3`, mulai tepat di 44px), serta garis pemandu vertikal dan dot slot 20px berpusat tepat sejajar dengan ikon menu group (`left-[21.5px]`).
+    - **Sembunyikan Arrow pada Menu Ber-Badge PRO**: Grup menu yang memiliki badge PRO (seperti Payroll, CRM, Aset Tetap) kini menyembunyikan ikon chevron arrow dan hanya menampilkan badge PRO biru di pojok kanan (`ml-auto`), dengan fungsi klik yang tetap membuka/menutup submenu secara normal.
+    - **Menu Submenu Tidak Otomatis Terbuka**: Status pembukaan akordeon submenu diinisialisasi ke `open: false` secara default.
+    - **Gradasi Blur Memudar di Bawah (Halfway Floating Button)**: Lapisan gradasi blur memudar (`h-20 bg-gradient-to-t from-background via-background/70 to-transparent backdrop-blur-[6px] [mask-image:linear-gradient(to_top,black_30%,transparent)]`) yang posisinya tepat menembus setengah ketinggian tombol floating bar.
+  - **Penyederhanaan Header Mobile Sesuai Konteks**:
+    - Menghapus komponen unit/organisasi (*Tirtawening Barat/Pusat*).
+    - Menampilkan murni: Sisi Kiri = Ikon Logo & Nama Aplikasi (*Elysia Finance*), Sisi Kanan = Tombol Notifikasi & Avatar Pengguna (`Notifications` & `Profile`).
+  - **Penyelarasan Konten Keuangan ERP (Root Server Context)**:
+    - Mengganti seluruh konten konteks baca meter menjadi konteks ERP Akuntansi Keuangan Elysia Finance.
+    - Menambahkan menu **Aksi Cepat Pembuatan Dokumen** di bagian atas drawer: *Faktur Penjualan Baru, Tagihan Pembelian Baru, Catat Biaya Operasional, Transfer Kas & Bank, dan Input Jurnal Penyesuaian*.
+    - Menyesuaikan tombol aksi utama bawah menjadi *Catat Transaksi / Dokumen Baru* dan indikator status menjadi *Elysia Finance Cloud • Terhubung*.
+- File/skema berubah:
+  - `src/components/layout/mobile-nav.tsx`
+  - `docs/SESSION-LOG.md`
+- Migrasi: tidak ada
+- Verifikasi:
+  - `bun run typecheck`: 0 error
+  - `bun run lint`: 0 error
+  - `bun run build`: Berhasil 100% (33 rute Next.js Partial Prerendering)
+- Belum selesai / langkah berikutnya: Membangun modul pengiriman pesanan (DO) dan penerimaan pengadaan (GRN).
+
+## 2026-11-15 — S-069 — Desain & Implementasi Mobile Navigation Vercel-Style (PDAM Tirtawening)
+- Milestone: F3/UI (Mobile Navigation & Responsive Experience)
+- Dikerjakan:
+  - **Arsitektur Komponen Mobile Navigation Vercel-Style (`src/components/layout/mobile-nav.tsx`)**:
+    - **Top Bar Mobile (~48px)**: Menampilkan tombol pill pengganti unit kerja/organisasi PDAM Tirtawening (Kota Bandung Pusat, Wilayah Timur, Barat, Utara, Selatan) dengan avatar, nama terpotong "…", chevron atas-bawah, dan logo aplikasi di kanan.
+    - **Floating Pill Bar (Fixed Bottom Center)**: Bar mengambang dengan shadow lembut, posisi fixed di tengah bawah dengan safe-area inset (`env(safe-area-inset-bottom)`), tombol pencarian `Find` (terintegrasi dengan Command Palette), garis pemisah vertikal, dan tombol toggle hamburger 2-bar yang bertransformasi menjadi ikon `X` saat terbuka.
+    - **Panel Menu Terbuka & Overlay**:
+      - Background overlay semi-transparan dengan blur tipis dan scroll body locking.
+      - Bagian atas panel: Dua tombol pill dropdown berdampingan (pilihan unit/organisasi & filter modul: Semua, Keuangan, Persediaan, Enterprise, Laporan, Sistem).
+      - Navigasi vertikal terstruktur dari `SIDEBAR_MENU` dengan ikon outline, penanda rute aktif, dan akordeon inline mulus (`AnimatePresence`) untuk menu ber-submenu.
+      - Sisi akun pengguna: Avatar bulat, nama tebal (*Superadmin Tirtawening*), email (*admin@pdam-tirtawening.co.id*), dan badge peran.
+      - Aksi akun (Label di kiri, Ikon di kanan tanpa ikon di kiri): Notifikasi dengan titik biru realtime, Pengaturan Akun, Toggle tema 3 segmen (*Sistem / Terang / Gelap*), dan Keluar (Log Out).
+      - Tombol aksi cepat penuh selebar panel (*Catat Meter / Transaksi Cepat*) berlatar kontras hitam.
+      - Indikator status sistem realtime: teks biru di kiri (*PDAM Tirtawening Cloud • Terhubung*) dan titik biru berkedip di kanan.
+  - **Integrasi Layout Responsif (`AppShell`, `Header`, `Sidebar`, `Search`)**:
+    - Isolasi breakpoint ketat: Mobile nav baru aktif murni di bawah breakpoint `md` (`< md`), tanpa mengubah sedikit pun tampilan desktop atau tablet (`md` ke atas).
+    - Memasang `MobileNavProvider` pada `AppShell` dan menambahkan padding bawah aman (`pb-24 md:pb-8`) untuk mencegah konten tertutup floating bar.
+    - Integrasi event `app:open-search` pada `Search` sehingga tombol `Find` langsung membuka Command Palette secara ergonomis.
+- File/skema berubah:
+  - `src/components/layout/mobile-nav.tsx` (baru)
+  - `src/components/layout/header/header.tsx`
+  - `src/components/layout/header/search.tsx`
+  - `src/components/layout/sidebar/sidebar.tsx`
+  - `src/components/layout/app-shell.tsx`
+  - `docs/SESSION-LOG.md`
+- Migrasi: tidak ada
+- Verifikasi:
+  - `bun run typecheck`: 0 error
+  - `bun run lint`: 0 error
+  - `bun run build`: Berhasil 100% (33 rute Next.js Partial Prerendering)
+- Belum selesai / langkah berikutnya: Membangun modul pengiriman pesanan (DO) dan penerimaan pengadaan (GRN).
+
 ## 2026-11-15 — S-068 — Halaman Input Khusus Enterprise & Pembersihan Header Penjualan & Pembelian
 - Milestone: F3/UI (Dedicated Full-Page Entry & Enterprise Data Standards)
 - Dikerjakan:

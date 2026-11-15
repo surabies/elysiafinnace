@@ -106,11 +106,11 @@ export default function Sidebar() {
         <SidebarPanel collapsed={collapsed} />
       </aside>
 
-      {/* Mobile & tablet: drawer, sudut luar melengkung halus dan tepi dalam menempel rata ke layar */}
+      {/* Tablet (md - xl): drawer, sudut luar melengkung halus dan tepi dalam menempel rata ke layar. Di bawah md menggunakan mobile nav Vercel-style */}
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <SheetContent
           side="left"
-          className="w-72 bg-sidebar p-0 rounded-s-none rounded-e-2xl border-s-0 border-e border-border/80 xl:hidden overflow-hidden"
+          className="hidden md:block xl:hidden w-72 bg-sidebar p-0 rounded-s-none rounded-e-2xl border-s-0 border-e border-border/80 overflow-hidden"
         >
           <VisuallyHidden>
             <SheetTitle>Menu navigasi</SheetTitle>

@@ -34,6 +34,28 @@ export type DashboardJournalActivity = {
   draftCount: number;
 };
 
+export type BankAccountSummary = {
+  id: string;
+  kode: string;
+  nama: string;
+  jenis: "KAS" | "BANK";
+  namaBank?: string | null;
+  nomorRekening?: string | null;
+  kodeMataUang: string;
+  saldo?: string;
+  kodeAkunCoa?: string;
+  namaAkunCoa?: string;
+};
+
+export type AgingBucketSummary = {
+  current: string;
+  hari1_30: string;
+  hari31_60: string;
+  hari61_90: string;
+  hari90Plus: string;
+  total: string;
+};
+
 export type DashboardSummary = {
   /** Sumber data grafik utama. */
   source: "sample" | "live";
@@ -43,4 +65,7 @@ export type DashboardSummary = {
   trend: FinancialTrendPoint[];
   hourlyTrend: FinancialHourlyTrendPoint[];
   journalActivity: DashboardJournalActivity | null;
+  bankAccounts: BankAccountSummary[];
+  agingPiutang: AgingBucketSummary | null;
+  agingHutang: AgingBucketSummary | null;
 };
